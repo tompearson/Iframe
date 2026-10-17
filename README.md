@@ -9,7 +9,8 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 3. [One command (recommended)](#one-command-recommended)
 4. [Local dev (two terminals)](#local-dev-two-terminals)
 5. [Vercel (staging / production)](#vercel-staging--production)
-6. [Repo layout](#repo-layout)
+6. [Architecture notes (limits, single-turn)](#architecture-notes-limits-single-turn)
+7. [Repo layout](#repo-layout)
 
 ---
 
@@ -29,7 +30,9 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 |-----|---------|
 | [**AGENTS.md**](AGENTS.md) | Cursor agent rules |
 | [**docs/PLAN.md**](docs/PLAN.md) | Architecture and phases |
-| [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Vercel + Squarespace handoff |
+| [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Site admin iframe handoff |
+| [**docs/VERCEL.md**](docs/VERCEL.md) | Vercel import, env vars, verify |
+| [**docs/ARCHITECTURE_NOTES.md**](docs/ARCHITECTURE_NOTES.md) | Single-turn RAG, in-memory limits, no DB |
 | [**../documentation-helper/docs/planning/RAG_API_CONTRACT.md**](../documentation-helper/docs/planning/RAG_API_CONTRACT.md) | Upstream API spec |
 
 ---
@@ -87,11 +90,22 @@ Open **http://127.0.0.1:8780/demo/** (mock parent + iframe). Widget only: **http
 
 ## Vercel (staging / production)
 
-1. Import repo in Vercel.
-2. Set `RAG_API_URL` and `RAG_SERVICE_SECRET`.
-3. Deploy; test `/embed/` and `/demo`.
+**GitHub:** [github.com/tompearson/Iframe](https://github.com/tompearson/Iframe)
 
-Details: [docs/PRODUCTION_EMBED.md](docs/PRODUCTION_EMBED.md).
+Step-by-step: **[docs/VERCEL.md](docs/VERCEL.md)** (env vars, verify URLs). Go-live snippet: [docs/PRODUCTION_EMBED.md](docs/PRODUCTION_EMBED.md).
+
+---
+
+## Architecture notes (limits, single-turn)
+
+| Topic | v1 behavior |
+|-------|-------------|
+| **RAG memory** | **Single-turn** — each message sends only that question to Render `/query` |
+| **Chat UI history** | **Client-side display only** — does not change retrieval |
+| **Session id header** | Rate limiting only (`EMBED_MAX_TURNS_*`), not authentication |
+| **Quota storage** | **In-memory** in BFF (`dev_server` / `api/query.js`) — no database |
+
+Details: [docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md). Upstream API: [RAG_API_CONTRACT.md](../documentation-helper/docs/planning/RAG_API_CONTRACT.md).
 
 Optional local Vercel parity: `npx vercel dev`.
 

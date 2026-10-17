@@ -1,6 +1,6 @@
 # Production embed handoff (Squarespace / santoshapilates.com)
 
-*Last updated: October 17, 2026 · See also [PLAN.md](PLAN.md)*
+*Last updated: October 17, 2026 · [VERCEL.md](VERCEL.md) · [ARCHITECTURE_NOTES.md](ARCHITECTURE_NOTES.md)*
 
 ## Table of contents
 

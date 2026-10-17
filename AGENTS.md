@@ -17,9 +17,18 @@ This repo is the **embeddable chat widget** and **BFF** for Santosha Pilates RAG
 
 ## Git
 
+- **Remote:** https://github.com/tompearson/Iframe — branch **`main`**
 - **Do not commit or push** unless the user explicitly asks.
 - Do **not** commit `.env` (contains `RAG_SERVICE_SECRET`).
-- No Udemy upstream — standalone repo; GitHub remote TBD.
+- Standalone repo (not part of documentation-helper). Local path often `~/Projects/Santosha/Iframe` beside [`documentation-helper`](../documentation-helper).
+
+## Behavior (read before changing limits or chat UX)
+
+See **[docs/ARCHITECTURE_NOTES.md](docs/ARCHITECTURE_NOTES.md)**:
+
+- RAG is **single-turn** per request; widget thread is **client display only**.
+- **`X-Embed-Session-Id`** is for **in-memory turn limits**, not auth or server-side memory.
+- **No database** for sessions/quota (v1).
 
 ## Security rules for agents
 
@@ -74,6 +83,7 @@ Iframe/
 
 ## References
 
+- Vercel: [docs/VERCEL.md](docs/VERCEL.md)
 - RAG API: `http://127.0.0.1:8000/openapi.json` (local) or Render production URL
 - Render deploy: [`documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md`](../documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md)
 - Recrawl content: [`documentation-helper/TAVILY_RECRAWL.md`](../documentation-helper/TAVILY_RECRAWL.md)
