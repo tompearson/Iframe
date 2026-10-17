@@ -1,13 +1,13 @@
 # Santosha Iframe — embeddable RAG chat
 
-Chat widget and BFF for the Santosha Pilates documentation RAG API ([`documentation-helper`](../documentation-helper)). Designed to demo locally and embed on [santoshapilates.com](https://www.santoshapilates.com/) via iframe (production host: **Vercel**, planned).
+Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](../documentation-helper)).
 
 ## Table of contents
 
 1. [Status](#status)
-2. [Documentation for agents and humans](#documentation-for-agents-and-humans)
-3. [When to work in this repo vs documentation-helper](#when-to-work-in-this-repo-vs-documentation-helper)
-4. [Quick start (after Phase 1 is implemented)](#quick-start-after-phase-1-is-implemented)
+2. [Documentation](#documentation)
+3. [Local dev (two terminals)](#local-dev-two-terminals)
+4. [Vercel (staging / production)](#vercel-staging--production)
 5. [Repo layout](#repo-layout)
 
 ---
@@ -16,57 +16,65 @@ Chat widget and BFF for the Santosha Pilates documentation RAG API ([`documentat
 
 | Phase | State |
 |-------|--------|
-| Repo scaffold + plan | **Done** |
-| Local embed UI + `dev_server.py` | Not started — see [docs/PLAN.md](docs/PLAN.md) |
-| Vercel staging | Not started |
+| Repo + plan | Done |
+| Local `dev_server.py` + embed UI + `/demo` | Done |
+| Vercel `api/query.js` + `vercel.json` | Done |
 
 ---
 
-## Documentation for agents and humans
+## Documentation
 
 | Doc | Purpose |
 |-----|---------|
-| [**AGENTS.md**](AGENTS.md) | Cursor agent rules, security, two-terminal workflow |
-| [**docs/PLAN.md**](docs/PLAN.md) | Architecture, CORS/Vercel, phases, todos |
-| [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Squarespace handoff (Phase 2) |
+| [**AGENTS.md**](AGENTS.md) | Cursor agent rules |
+| [**docs/PLAN.md**](docs/PLAN.md) | Architecture and phases |
+| [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Vercel + Squarespace handoff |
+| [**../documentation-helper/docs/planning/RAG_API_CONTRACT.md**](../documentation-helper/docs/planning/RAG_API_CONTRACT.md) | Upstream API spec |
 
 ---
 
-## When to work in this repo vs documentation-helper
+## Local dev (two terminals)
 
-| Task | Repo |
-|------|------|
-| Tavily recrawl, Pinecone ingest, Render RAG API | `documentation-helper` |
-| Chat widget UI, iframe demo, turn limits, Vercel BFF | **Iframe** (here) |
-
-Create **Iframe** once the plan is agreed (done). Implement **Phase 1** when `uvicorn rag_api:app` returns good answers on `/query` locally or on Render.
-
----
-
-## Quick start (after Phase 1 is implemented)
+**Terminal 1 — RAG API**
 
 ```bash
-# Terminal 1 — RAG
-cd ~/Projects/Santosha/documentation-helper
 export PATH="$HOME/.local/bin:$PATH"
+cd ~/Projects/Santosha/documentation-helper
 pipenv run uvicorn rag_api:app --host 127.0.0.1 --port 8000
-
-# Terminal 2 — embed (coming soon)
-cd ~/Projects/Santosha/Iframe
-cp .env.example .env
-python dev_server.py
 ```
+
+**Terminal 2 — embed BFF + UI**
+
+```bash
+cd ~/Projects/Santosha/Iframe
+cp .env.example .env   # set RAG_SERVICE_SECRET to match documentation-helper
+python3 dev_server.py
+```
+
+Open **http://127.0.0.1:8780/demo/** (mock parent + iframe). Widget only: **http://127.0.0.1:8780/embed/**.
+
+---
+
+## Vercel (staging / production)
+
+1. Import repo in Vercel.
+2. Set `RAG_API_URL` and `RAG_SERVICE_SECRET`.
+3. Deploy; test `/embed/` and `/demo`.
+
+Details: [docs/PRODUCTION_EMBED.md](docs/PRODUCTION_EMBED.md).
+
+Optional local Vercel parity: `npx vercel dev`.
 
 ---
 
 ## Repo layout
 
 ```
-embed/          # widget (Phase 1)
-demo/           # mock parent site (Phase 1)
-api/            # Vercel serverless (Phase 2)
-dev_server.py   # local BFF (Phase 1)
-docs/           # PLAN.md, PRODUCTION_EMBED.md
+embed/           # widget (HTML/CSS/JS)
+demo/            # mock parent site
+api/query.js     # Vercel serverless BFF
+lib/             # shared Python (dev_server)
+dev_server.py    # local BFF + static
+vercel.json      # CSP frame-ancestors, rewrites
+docs/
 ```
-
-No Pipenv required here for v1 (stdlib Python dev server planned).

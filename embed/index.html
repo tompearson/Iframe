@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santosha Assistant</title>
+  <link rel="stylesheet" href="embed.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Santosha Pilates</h1>
+      <p class="subtitle">Ask about classes, offerings, and the Movement Society</p>
+    </header>
+    <main id="messages" class="messages" aria-live="polite"></main>
+    <footer class="composer">
+      <form id="form">
+        <textarea id="input" rows="2" maxlength="1000" placeholder="Ask a question…" required></textarea>
+        <div class="actions">
+          <button type="button" id="clear" class="btn secondary">Clear</button>
+          <button type="submit" id="send" class="btn primary">Send</button>
+        </div>
+      </form>
+      <p id="status" class="status" role="status"></p>
+    </footer>
+  </div>
+  <script src="embed.js"></script>
+</body>
+</html>

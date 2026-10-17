@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mock Santosha Site — iframe demo</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      background: #ebe6e0;
+      color: #2c2825;
+    }
+    .hero {
+      padding: 2rem 1.5rem;
+      background: linear-gradient(135deg, #d4c4a8, #f7f3ef);
+      text-align: center;
+    }
+    .hero h1 { margin: 0 0 0.5rem; font-size: 1.75rem; }
+    .hero p { margin: 0; opacity: 0.85; max-width: 36rem; margin-inline: auto; }
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 960px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+    .copy { flex: 1 1 280px; }
+    .widget {
+      flex: 0 0 420px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+      min-height: 560px;
+    }
+    iframe {
+      display: block;
+      width: 100%;
+      height: 560px;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>Santosha Pilates (mock parent page)</h1>
+    <p>Local demo for iframe embed — not the real Squarespace site.</p>
+  </header>
+  <div class="layout">
+    <section class="copy">
+      <h2>Movement Society</h2>
+      <p>This page simulates how a business site might host the chat widget in an iframe. The widget loads from the same dev server at <code>/embed/</code>.</p>
+      <p>Run <code>python3 dev_server.py</code> in the Iframe repo and open <code>/demo/</code>.</p>
+    </section>
+    <aside class="widget" aria-label="Chat assistant">
+      <iframe src="/embed/" title="Santosha Pilates assistant"></iframe>
+    </aside>
+  </div>
+</body>
+</html>

@@ -139,10 +139,10 @@ Optional upstream: `CORSMiddleware` on Render only if browser must hit RAG direc
 | ID | Status | Task |
 |----|--------|------|
 | new-repo-scaffold | **done** | Repo at `~/Projects/Santosha/Iframe`, AGENTS, PLAN |
-| local-dev-proxy | pending | `dev_server.py`, embed UI, demo parent |
-| vercel-staging | pending | Vercel API route + `vercel.json` |
-| api-contract-doc | pending | In **documentation-helper** — `RAG_API_CONTRACT.md` |
-| doc-helper-minimal | pending | Optional Render CORS only if needed |
+| local-dev-proxy | **done** | `dev_server.py`, `embed/`, `demo/parent.html`, `lib/` |
+| vercel-staging | **done** | `api/query.js`, `vercel.json`, `PRODUCTION_EMBED.md` |
+| api-contract-doc | **done** | `documentation-helper/docs/planning/RAG_API_CONTRACT.md` |
+| doc-helper-minimal | **done** | CORS deferral documented in contract (no Render middleware yet) |
 
 ---
 
