@@ -91,8 +91,8 @@ Do **not** point browser JS at Render `/query` with a leaked Bearer token. Rende
 
 | Environment | Parent mock | Widget | BFF |
 |-------------|-------------|--------|-----|
-| Local | `http://127.0.0.1:8780/demo` | `/embed/` | `dev_server.py` |
-| Vercel preview | `https://*.vercel.app/demo` | `/embed/` | `/api/query` |
+| Local | `http://127.0.0.1:8780/demo` or `/site` | `/embed/` | `dev_server.py` |
+| Vercel preview | `https://*.vercel.app/demo` or `/site` | `/embed/` | `/api/query` |
 | Production | santoshapilates.com | Vercel `/embed/` | Vercel `/api/query` |
 
 ---

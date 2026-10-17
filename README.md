@@ -85,7 +85,7 @@ cp .env.example .env   # set RAG_SERVICE_SECRET to match documentation-helper
 python3 dev_server.py
 ```
 
-Open **http://127.0.0.1:8780/demo/** (mock parent + iframe). Widget only: **http://127.0.0.1:8780/embed/**.
+Open **http://127.0.0.1:8780/demo/** (simple mock) or **http://127.0.0.1:8780/site** (Squarespace-style nav preview). Widget only: **http://127.0.0.1:8780/embed/**.
 
 ---
 
@@ -116,7 +116,7 @@ Optional local Vercel parity: `npx vercel dev`.
 
 ```
 embed/           # widget (HTML/CSS/JS)
-demo/            # mock parent site
+demo/            # mock parent (/demo) + site preview (/site)
 api/query.js     # Vercel serverless BFF
 lib/             # shared Python (dev_server)
 dev_server.py    # local BFF + static

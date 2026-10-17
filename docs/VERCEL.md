@@ -45,8 +45,10 @@ Render RAG must have `VECTOR_STORE=pinecone` and a populated index — see [REND
 
 | URL | Expect |
 |-----|--------|
-| `https://<project>.vercel.app/embed/` | Chat widget loads |
-| `https://<project>.vercel.app/demo` | Mock parent + iframe |
+| `https://iframe-sage-two.vercel.app/embed/` | Chat widget loads (production example) |
+| `https://iframe-sage-two.vercel.app/demo` | Simple mock parent + iframe |
+| `https://iframe-sage-two.vercel.app/site` | Squarespace-style nav preview + iframe |
+| `https://<project>.vercel.app/embed/` | Same checks on your project hostname |
 | Ask a question in widget | Answer + Sources; no secret in browser Network tab (calls `/api/query` only) |
 
 Check response headers on `/embed/`: `Content-Security-Policy` includes `frame-ancestors` — see [`vercel.json`](../vercel.json).

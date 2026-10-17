@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santosha Pilates — site preview (Vercel)</title>
+  <link rel="stylesheet" href="/demo/site.css" />
+</head>
+<body>
+  <p class="preview-banner">Vercel preview — not the live Squarespace site.</p>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/site">Santosha <span>Pilates</span></a>
+      <button
+        type="button"
+        class="nav-toggle"
+        aria-expanded="false"
+        aria-controls="main-nav"
+        id="nav-toggle"
+      >
+        ☰
+      </button>
+      <nav class="main-nav" id="main-nav" aria-label="Primary">
+        <ul>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/" target="_blank" rel="noopener noreferrer">Home</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/about-santosha-pilates" target="_blank" rel="noopener noreferrer">About</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/classes" target="_blank" rel="noopener noreferrer">Live Classes</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/ondemand" target="_blank" rel="noopener noreferrer">On Demand</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/retreats-1" target="_blank" rel="noopener noreferrer">Retreats</a>
+          </li>
+          <li>
+            <a class="is-active" href="#ask">Ask Santosha</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Santosha Pilates Movement Therapy</h1>
+    <p>
+      The Santosha Movement Society connects your sessions, classes, and on-demand practice
+      into one supportive path toward sustainable, pain-free movement.
+    </p>
+  </section>
+
+  <main class="content">
+    <section class="ask-section" id="ask" aria-labelledby="ask-heading">
+      <div class="ask-grid">
+        <div class="ask-copy">
+          <h2 id="ask-heading">Santosha Movement Society — ask anything</h2>
+          <p>
+            Use the assistant to learn about offerings, classes, on-demand video libraries,
+            retreats, and how to get started with private sessions.
+          </p>
+          <h3>The 3-part blended approach</h3>
+          <ul>
+            <li><strong>Private sessions</strong> — personalized movement plans and recap notes.</li>
+            <li><strong>Classes &amp; small groups</strong> — online and in-person practice with feedback.</li>
+            <li><strong>Tailored on-demand videos</strong> — recommended at every private session.</li>
+          </ul>
+          <p>
+            On the live site, this widget would sit in your Squarespace layout; here it loads
+            from the same Vercel deployment at <code>/embed/</code>.
+          </p>
+        </div>
+        <aside class="widget-panel" aria-label="Chat assistant">
+          <iframe src="/embed/" title="Santosha Pilates assistant"></iframe>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    Preview links:
+    <a href="/embed/">Widget only</a> ·
+    <a href="/demo">Simple mock</a> ·
+    <a href="https://www.santoshapilates.com/" target="_blank" rel="noopener noreferrer">Live site</a>
+  </footer>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("nav-toggle");
+      var nav = document.getElementById("main-nav");
+      if (!btn || !nav) return;
+      btn.addEventListener("click", function () {
+        var open = nav.classList.toggle("is-open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    })();
+  </script>
+</body>
+</html>
