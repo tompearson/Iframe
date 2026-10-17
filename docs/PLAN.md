@@ -23,10 +23,9 @@
 
 | Timing | Action |
 |--------|--------|
-| **Now** | Repo scaffold, `AGENTS.md`, this plan — **no RAG code here** |
-| **When RAG API works locally or on Render** | Implement Phase 1 (`dev_server.py`, embed UI, demo parent) |
-| **Before Santosha go-live** | Phase 2 Vercel preview (`/demo` + `/embed/` + `/api/query`) |
-| **Go-live** | Santosha developer embeds production Vercel iframe URL; tighten CSP `frame-ancestors` |
+| **Done** | Phase 1 local BFF + embed UI + demo; Phase 2 Vercel `api/query.js` + `vercel.json` |
+| **Next** | Vercel production env (`RAG_API_URL`, `RAG_SERVICE_SECRET`), test preview URLs |
+| **Go-live** | Site admin embeds production Vercel iframe URL; tighten CSP `frame-ancestors` for santoshapilates.com |
 
 Do **not** add embed static files or Vercel config to `documentation-helper`.
 

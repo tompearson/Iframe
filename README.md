@@ -28,6 +28,7 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 
 | Doc | Purpose |
 |-----|---------|
+| [**docs/AGENT_BRIEFING.md**](docs/AGENT_BRIEFING.md) | **Start here for agent audits** — what is done vs by-design |
 | [**AGENTS.md**](AGENTS.md) | Cursor agent rules |
 | [**docs/PLAN.md**](docs/PLAN.md) | Architecture and phases |
 | [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Site admin iframe handoff |

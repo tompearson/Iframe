@@ -4,7 +4,7 @@
 
 This repo is the **embeddable chat widget** and **BFF** for Santosha Pilates RAG. It is intentionally **separate** from [`documentation-helper`](../documentation-helper), which owns ingest, vector store, and the Render FastAPI (`POST /query`).
 
-**Read first:** [`docs/PLAN.md`](docs/PLAN.md) (architecture, phases, CORS/Vercel, todos).
+**Read first (audits / “what are the gaps?”):** [`docs/AGENT_BRIEFING.md`](docs/AGENT_BRIEFING.md) → [`docs/ARCHITECTURE_NOTES.md`](docs/ARCHITECTURE_NOTES.md) → [`docs/VERCEL.md`](docs/VERCEL.md). Historical plan: [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Scope
 
