@@ -1,0 +1,12 @@
+---
+description: Santosha Iframe embed repo — widget + BFF, not RAG
+globs:
+alwaysApply: true
+---
+
+# Iframe — agent conventions
+
+- Read `AGENTS.md` and `docs/PLAN.md` before structural changes.
+- RAG ingest, Pinecone, and `rag_api_gemini.py` live in sibling `../documentation-helper` — do not duplicate.
+- Never commit secrets or put `RAG_SERVICE_SECRET` in client JS.
+- Linux: prefer `python3` / `pipenv run` in documentation-helper; do not assume `python` on PATH.

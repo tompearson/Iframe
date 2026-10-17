@@ -1,0 +1,79 @@
+# Cursor agent instructions — Santosha Iframe (embed chat)
+
+*Last updated: October 17, 2026*
+
+This repo is the **embeddable chat widget** and **BFF** for Santosha Pilates RAG. It is intentionally **separate** from [`documentation-helper`](../documentation-helper), which owns ingest, vector store, and the Render FastAPI (`POST /query`).
+
+**Read first:** [`docs/PLAN.md`](docs/PLAN.md) (architecture, phases, CORS/Vercel, todos).
+
+## Scope
+
+| In this repo | In documentation-helper |
+|--------------|-------------------------|
+| Vanilla embed UI (`embed/`), mock parent (`demo/`) | `ingestion_gemini.py`, Pinecone, `backend/core_gemini.py` |
+| Local `dev_server.py` (proxy + static) | `rag_api_gemini.py` on Render |
+| Vercel `/api/query` serverless → Render | `RAG_SERVICE_SECRET`, `GEMINI_API_KEY` (never in browser JS) |
+| Turn limits (in-memory, no DB) | Streamlit dev UI (`main_gemini.py`) |
+
+## Git
+
+- **Do not commit or push** unless the user explicitly asks.
+- Do **not** commit `.env` (contains `RAG_SERVICE_SECRET`).
+- No Udemy upstream — standalone repo; GitHub remote TBD.
+
+## Security rules for agents
+
+1. **Never** put `RAG_SERVICE_SECRET`, `GEMINI_API_KEY`, or Pinecone keys in client-side JS or HTML.
+2. Browser calls **same-origin** `/api/query` only (dev server or Vercel BFF).
+3. BFF forwards to `RAG_API_URL` with `Authorization: Bearer` server-side.
+4. Session id (`X-Embed-Session-Id`) is for **rate limits**, not authentication.
+
+## Local dev (two terminals)
+
+**Terminal 1 — RAG API** (sibling repo):
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+cd ~/Projects/Santosha/documentation-helper
+pipenv run uvicorn rag_api:app --host 127.0.0.1 --port 8000
+```
+
+**Terminal 2 — Iframe** (after `dev_server.py` exists):
+
+```bash
+cd ~/Projects/Santosha/Iframe
+cp .env.example .env   # RAG_API_URL + RAG_SERVICE_SECRET (match documentation-helper .env)
+python dev_server.py
+```
+
+Open mock parent URL printed by dev server (see README).
+
+**Linux:** use `pipenv run` / `python3` in documentation-helper; do **not** assume `python` is on PATH.
+
+## Implementation order (from plan)
+
+1. `dev_server.py` + `embed/` UI + `demo/parent.html` (Phase 1)
+2. `docs/PRODUCTION_EMBED.md` + Vercel `api/query` + `vercel.json` (Phase 2)
+3. documentation-helper: optional `RAG_API_CONTRACT.md` only (sibling repo change)
+
+## Key paths (target layout)
+
+```
+Iframe/
+├── AGENTS.md              # this file
+├── docs/PLAN.md           # master plan (sync with Cursor plan when architecture changes)
+├── docs/PRODUCTION_EMBED.md
+├── embed/                 # widget static assets
+├── demo/                  # mock business site + iframe
+├── api/                   # Vercel serverless (Phase 2)
+├── dev_server.py          # local BFF + static (Phase 1)
+├── vercel.json
+├── .env.example
+└── README.md
+```
+
+## References
+
+- RAG API: `http://127.0.0.1:8000/openapi.json` (local) or Render production URL
+- Render deploy: [`documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md`](../documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md)
+- Recrawl content: [`documentation-helper/TAVILY_RECRAWL.md`](../documentation-helper/TAVILY_RECRAWL.md)
