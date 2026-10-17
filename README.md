@@ -1,6 +1,6 @@
 # Santosha Iframe — embeddable RAG chat
 
-Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](../documentation-helper)).
+Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](../documentation-helper)). **Project index:** [tompearson/Santosha](https://github.com/tompearson/Santosha).
 
 ## Table of contents
 
