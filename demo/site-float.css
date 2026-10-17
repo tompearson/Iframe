@@ -1,0 +1,109 @@
+/* Detached floating chat window (not in page layout flow) */
+
+.chat-launcher {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 900;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.25rem;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: var(--accent, #8b6914);
+  box-shadow: 0 8px 24px rgba(44, 40, 37, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chat-launcher:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(44, 40, 37, 0.26);
+}
+
+.chat-launcher.is-hidden {
+  display: none;
+}
+
+.chat-window {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 901;
+  width: min(400px, calc(100vw - 1.5rem));
+  height: min(580px, calc(100vh - 2rem));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #fff);
+  border-radius: 12px;
+  border: 1px solid var(--border, #ddd5cb);
+  box-shadow: 0 16px 48px rgba(44, 40, 37, 0.18);
+  overflow: hidden;
+}
+
+.chat-window.is-hidden {
+  display: none;
+}
+
+.chat-window-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem 0.55rem 0.85rem;
+  background: var(--accent-soft, #e8dcc8);
+  border-bottom: 1px solid var(--border, #ddd5cb);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.chat-window-header.is-dragging {
+  cursor: grabbing;
+}
+
+.chat-window-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text, #2c2825);
+}
+
+.chat-window-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chat-window-actions button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--border, #ddd5cb);
+  border-radius: 6px;
+  background: var(--surface, #fff);
+  color: var(--text, #2c2825);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.chat-window-actions button:hover {
+  background: var(--bg, #f7f3ef);
+}
+
+.chat-window iframe {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  min-height: 0;
+}
+
+.float-copy {
+  max-width: 40rem;
+}
+
+.float-copy code {
+  font-size: 0.88em;
+}

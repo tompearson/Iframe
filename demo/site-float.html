@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santosha Pilates — floating chat preview</title>
+  <link rel="stylesheet" href="/demo/site.css" />
+  <link rel="stylesheet" href="/demo/site-float.css" />
+</head>
+<body>
+  <p class="preview-banner">Vercel preview — floating detached chat window (not inline iframe).</p>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="/float">Santosha <span>Pilates</span></a>
+      <button
+        type="button"
+        class="nav-toggle"
+        aria-expanded="false"
+        aria-controls="main-nav"
+        id="nav-toggle"
+      >
+        ☰
+      </button>
+      <nav class="main-nav" id="main-nav" aria-label="Primary">
+        <ul>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/" target="_blank" rel="noopener noreferrer">Home</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/about-santosha-pilates" target="_blank" rel="noopener noreferrer">About</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/classes" target="_blank" rel="noopener noreferrer">Live Classes</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/ondemand" target="_blank" rel="noopener noreferrer">On Demand</a>
+          </li>
+          <li>
+            <a class="external" href="https://www.santoshapilates.com/retreats-1" target="_blank" rel="noopener noreferrer">Retreats</a>
+          </li>
+          <li>
+            <a class="is-active" href="#float-demo">Ask Santosha</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Santosha Pilates Movement Therapy</h1>
+    <p>
+      Same site shell as the inline preview — the assistant lives in a detached floating window
+      instead of a column on the page.
+    </p>
+  </section>
+
+  <main class="content" id="float-demo">
+    <section class="float-copy">
+      <h2>Floating chat preview</h2>
+      <p>
+        Use the <strong>Ask Santosha</strong> button at the bottom-right to open the chat in a
+        floating panel. Drag it by the title bar, minimize to the launcher, or use
+        <strong>↗</strong> to open <code>/embed/</code> in a separate browser window.
+      </p>
+      <p>
+        Compare with the <a href="/site">inline iframe layout</a> on <code>/site</code>.
+        Production Squarespace would typically use a code block or plugin pattern similar to this
+        launcher + floating panel.
+      </p>
+      <h3>The 3-part blended approach</h3>
+      <ul>
+        <li><strong>Private sessions</strong> — personalized movement plans and recap notes.</li>
+        <li><strong>Classes &amp; small groups</strong> — online and in-person practice with feedback.</li>
+        <li><strong>Tailored on-demand videos</strong> — recommended at every private session.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    Preview links:
+    <a href="/site">Inline /site</a> ·
+    <a href="/embed/">Widget only</a> ·
+    <a href="/demo">Simple mock</a> ·
+    <a href="https://www.santoshapilates.com/" target="_blank" rel="noopener noreferrer">Live site</a>
+  </footer>
+
+  <button
+    type="button"
+    class="chat-launcher"
+    id="chat-launcher"
+    aria-expanded="false"
+    aria-controls="chat-window"
+  >
+    Ask Santosha
+  </button>
+
+  <div
+    class="chat-window is-hidden"
+    id="chat-window"
+    role="dialog"
+    aria-label="Ask Santosha"
+    aria-hidden="true"
+  >
+    <div class="chat-window-header" id="chat-window-header">
+      <span class="chat-window-title">Ask Santosha</span>
+      <div class="chat-window-actions">
+        <button type="button" id="chat-popout" title="Open in new browser window" aria-label="Open in new window">↗</button>
+        <button type="button" id="chat-minimize" title="Minimize" aria-label="Minimize">−</button>
+        <button type="button" id="chat-close" title="Close" aria-label="Close">×</button>
+      </div>
+    </div>
+    <iframe
+      id="chat-iframe"
+      title="Santosha Pilates assistant"
+      data-src="/embed/"
+    ></iframe>
+  </div>
+
+  <script src="/demo/site-float.js"></script>
+</body>
+</html>

@@ -78,6 +78,8 @@ class Handler(BaseHTTPRequestHandler):
             return _file_response(self, ROOT / "demo" / "parent.html")
         if path == "/site":
             return _file_response(self, ROOT / "demo" / "site-preview.html")
+        if path == "/float":
+            return _file_response(self, ROOT / "demo" / "site-float.html")
         if path.startswith("/demo/"):
             rel = path[len("/demo/") :].lstrip("/")
             target = (ROOT / "demo" / rel).resolve()
@@ -131,6 +133,7 @@ def main() -> None:
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"Santosha embed dev server http://{HOST}:{PORT}/demo/")
     print(f"  Site preview:  http://{HOST}:{PORT}/site")
+    print(f"  Float chat:    http://{HOST}:{PORT}/float")
     print(f"  Widget direct: http://{HOST}:{PORT}/embed/")
     print(f"  RAG upstream:  {os.environ.get('RAG_API_URL', 'http://127.0.0.1:8000')}")
     print("Press Ctrl+C to stop.")

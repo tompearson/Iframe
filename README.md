@@ -85,7 +85,7 @@ cp .env.example .env   # set RAG_SERVICE_SECRET to match documentation-helper
 python3 dev_server.py
 ```
 
-Open **http://127.0.0.1:8780/demo/** (simple mock) or **http://127.0.0.1:8780/site** (Squarespace-style nav preview). Widget only: **http://127.0.0.1:8780/embed/**.
+Open **http://127.0.0.1:8780/demo/** (simple mock), **http://127.0.0.1:8780/site** (inline iframe), or **http://127.0.0.1:8780/float** (floating chat). Widget only: **http://127.0.0.1:8780/embed/**.
 
 ---
 

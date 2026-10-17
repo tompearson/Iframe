@@ -27,12 +27,23 @@
           "value": "frame-ancestors 'self'"
         }
       ]
+    },
+    {
+      "source": "/float/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        }
+      ]
     }
   ],
   "rewrites": [
     { "source": "/embed", "destination": "/embed/index.html" },
     { "source": "/demo", "destination": "/demo/parent.html" },
     { "source": "/site", "destination": "/demo/site-preview.html" },
-    { "source": "/site/", "destination": "/demo/site-preview.html" }
+    { "source": "/site/", "destination": "/demo/site-preview.html" },
+    { "source": "/float", "destination": "/demo/site-float.html" },
+    { "source": "/float/", "destination": "/demo/site-float.html" }
   ]
 }

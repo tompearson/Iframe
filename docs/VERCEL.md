@@ -48,6 +48,7 @@ Render RAG must have `VECTOR_STORE=pinecone` and a populated index — see [REND
 | `https://iframe-sage-two.vercel.app/embed/` | Chat widget loads (production example) |
 | `https://iframe-sage-two.vercel.app/demo` | Simple mock parent + iframe |
 | `https://iframe-sage-two.vercel.app/site` | Squarespace-style nav preview + iframe |
+| `https://iframe-sage-two.vercel.app/float` | Same nav shell + floating detached chat window |
 | `https://<project>.vercel.app/embed/` | Same checks on your project hostname |
 | Ask a question in widget | Answer + Sources; no secret in browser Network tab (calls `/api/query` only) |
 
