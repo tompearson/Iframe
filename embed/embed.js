@@ -18,10 +18,74 @@
     return id;
   }
 
+  /** Fallback when CDN scripts fail to load (offline). */
+  function markdownFallback(text) {
+    let s = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    s = s.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    s = s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+    return s;
+  }
+
+  function renderAssistantHtml(text) {
+    const raw = String(text || "").trim();
+    if (!raw) return "";
+
+    if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
+      marked.setOptions({ breaks: true, gfm: true });
+      const parsed = marked.parse(raw);
+      const clean = DOMPurify.sanitize(parsed, {
+        ALLOWED_TAGS: [
+          "p",
+          "br",
+          "strong",
+          "em",
+          "b",
+          "i",
+          "ul",
+          "ol",
+          "li",
+          "a",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "code",
+        ],
+        ALLOWED_ATTR: ["href", "target", "rel"],
+      });
+      return clean;
+    }
+    return markdownFallback(raw);
+  }
+
+  function fillMessageBody(container, role, text) {
+    const body = document.createElement("div");
+    body.className = "msg-body";
+
+    if (role === "assistant") {
+      body.innerHTML = renderAssistantHtml(text);
+      body.querySelectorAll("a").forEach((a) => {
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+      });
+    } else {
+      body.textContent = text;
+    }
+    container.appendChild(body);
+  }
+
   function appendMessage(role, text, sources) {
     const div = document.createElement("div");
     div.className = "msg " + role;
-    div.textContent = text;
+    fillMessageBody(div, role, text);
 
     if (sources && sources.length) {
       const details = document.createElement("details");

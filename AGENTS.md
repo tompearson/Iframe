@@ -46,7 +46,7 @@ cp .env.example .env   # RAG_API_URL + RAG_SERVICE_SECRET (match documentation-h
 python dev_server.py
 ```
 
-Open mock parent URL printed by dev server (see README).
+**One command:** `./scripts/start-local-demo.sh` (RAG + embed; see README). Or open mock parent URL from dev server output.
 
 **Linux:** use `pipenv run` / `python3` in documentation-helper; do **not** assume `python` is on PATH.
 

@@ -69,8 +69,35 @@ body {
   border-radius: var(--radius);
   font-size: 0.92rem;
   line-height: 1.45;
-  white-space: pre-wrap;
   word-break: break-word;
+}
+
+.msg-body {
+  white-space: normal;
+}
+
+.msg-body p {
+  margin: 0 0 0.65rem;
+}
+
+.msg-body p:last-child {
+  margin-bottom: 0;
+}
+
+.msg-body ul,
+.msg-body ol {
+  margin: 0.35rem 0 0.65rem;
+  padding-left: 1.25rem;
+}
+
+.msg-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.msg.user .msg-body {
+  white-space: pre-wrap;
 }
 
 .msg.user {

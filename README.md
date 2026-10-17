@@ -6,9 +6,10 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 
 1. [Status](#status)
 2. [Documentation](#documentation)
-3. [Local dev (two terminals)](#local-dev-two-terminals)
-4. [Vercel (staging / production)](#vercel-staging--production)
-5. [Repo layout](#repo-layout)
+3. [One command (recommended)](#one-command-recommended)
+4. [Local dev (two terminals)](#local-dev-two-terminals)
+5. [Vercel (staging / production)](#vercel-staging--production)
+6. [Repo layout](#repo-layout)
 
 ---
 
@@ -30,6 +31,35 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 | [**docs/PLAN.md**](docs/PLAN.md) | Architecture and phases |
 | [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Vercel + Squarespace handoff |
 | [**../documentation-helper/docs/planning/RAG_API_CONTRACT.md**](../documentation-helper/docs/planning/RAG_API_CONTRACT.md) | Upstream API spec |
+
+---
+
+## One command (recommended)
+
+From the Iframe repo (after `cp .env.example .env` and matching `RAG_SERVICE_SECRET` to documentation-helper):
+
+```bash
+cd ~/Projects/Santosha/Iframe
+./scripts/start-local-demo.sh
+```
+
+Optional: open the demo page in your browser:
+
+```bash
+./scripts/start-local-demo.sh --open
+```
+
+Starts **uvicorn** on `127.0.0.1:8000` and **`dev_server.py`** on `127.0.0.1:8780`.
+
+| Situation | Default behavior |
+|-----------|------------------|
+| RAG `/health` OK on `:8000` | **Reuse** — does not restart uvicorn |
+| Embed `/embed/` OK on `:8780` | **Reuse** — does not restart dev server |
+| Port busy, wrong app | **Error** with hints (no silent kill) |
+| Want a clean restart | `./scripts/start-local-demo.sh --kill` |
+| Want other ports | `RAG_PORT=8001 EMBED_DEV_PORT=8781 ./scripts/start-local-demo.sh` (script sets `RAG_API_URL` for the proxy) |
+
+**Ctrl+C** stops only processes **this script started**. If both were already running, Ctrl+C just exits the script.
 
 ---
 
@@ -75,6 +105,7 @@ demo/            # mock parent site
 api/query.js     # Vercel serverless BFF
 lib/             # shared Python (dev_server)
 dev_server.py    # local BFF + static
+scripts/start-local-demo.sh  # RAG + embed one command
 vercel.json      # CSP frame-ancestors, rewrites
 docs/
 ```
