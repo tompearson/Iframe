@@ -131,6 +131,17 @@
     setStatus("");
   });
 
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    e.preventDefault();
+    if (sendBtn.disabled) return;
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event("submit", { cancelable: true }));
+    }
+  });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const query = input.value.trim();
