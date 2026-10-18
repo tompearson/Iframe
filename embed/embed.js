@@ -116,6 +116,21 @@
     statusEl.textContent = text || "";
   }
 
+  const MQ_DESKTOP_TYPING =
+    "(min-width: 769px) and (hover: hover) and (pointer: fine)";
+
+  /** On phones, keep the keyboard from covering the new assistant reply. */
+  function refocusOrDismissKeyboard() {
+    if (window.matchMedia(MQ_DESKTOP_TYPING).matches) {
+      input.focus();
+      return;
+    }
+    input.blur();
+    window.requestAnimationFrame(function () {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  }
+
   appendMessage(
     "assistant",
     "Ask me anything about Santosha Pilates. I'll search the site content and cite sources when I can."
@@ -181,7 +196,7 @@
       setStatus("");
     } finally {
       sendBtn.disabled = false;
-      input.focus();
+      refocusOrDismissKeyboard();
     }
   });
 })();
