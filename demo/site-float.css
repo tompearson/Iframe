@@ -101,6 +101,18 @@
   background: var(--bg, #f7f3ef);
 }
 
+#chat-popout {
+  display: none;
+}
+
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
+  #chat-popout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 .chat-window iframe {
   flex: 1 1 auto;
   width: 100%;
@@ -226,4 +238,39 @@
 
 .prompt-status:empty {
   display: none;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --float-mobile-chat-height: 72dvh;
+  }
+
+  body.float-chat-open {
+    padding-bottom: calc(var(--float-mobile-chat-height) + 0.75rem);
+  }
+
+  body.float-chat-open .chat-window:not(.is-hidden) {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    height: var(--float-mobile-chat-height);
+    min-height: var(--float-mobile-chat-height);
+    max-height: var(--float-mobile-chat-height);
+    border-radius: 14px 14px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  body.float-chat-open .chat-window-header {
+    padding: 0.35rem 0.5rem 0.35rem 0.65rem;
+    cursor: default;
+  }
+
+  body.float-chat-open #sample-prompts {
+    max-height: none;
+    overflow: visible;
+  }
 }

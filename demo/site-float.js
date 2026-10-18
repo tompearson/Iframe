@@ -22,6 +22,9 @@
 
   if (!launcher || !panel || !iframe) return;
 
+  var MQ_MOBILE = "(max-width: 768px)";
+  var MQ_POPOUT_ENABLED = "(min-width: 769px) and (hover: hover) and (pointer: fine)";
+
   var embedLoaded = false;
   var pendingQuery = null;
   var popOutWindow = null;
@@ -55,6 +58,51 @@
     el.style.bottom = anchorBottom + "px";
     el.style.left = "auto";
     el.style.top = "auto";
+  }
+
+  function clearPanelInlinePosition() {
+    panel.style.right = "";
+    panel.style.bottom = "";
+    panel.style.left = "";
+    panel.style.top = "";
+    panel.style.width = "";
+    panel.style.height = "";
+    panel.style.maxHeight = "";
+  }
+
+  function isMobileLayout() {
+    return window.matchMedia(MQ_MOBILE).matches;
+  }
+
+  function isPopOutEnabled() {
+    return window.matchMedia(MQ_POPOUT_ENABLED).matches;
+  }
+
+  function syncPanelPosition() {
+    if (panel.classList.contains("is-hidden")) return;
+    if (isMobileLayout()) {
+      clearPanelInlinePosition();
+      return;
+    }
+    applyAnchor(panel);
+  }
+
+  function syncResponsiveLayout() {
+    var mobile = isMobileLayout();
+    var chatOpen = launcher.classList.contains("is-hidden");
+    document.body.classList.toggle("float-chat-open", chatOpen && mobile);
+    if (btnPop) {
+      btnPop.disabled = !isPopOutEnabled();
+      btnPop.setAttribute("aria-hidden", isPopOutEnabled() ? "false" : "true");
+    }
+    syncPanelPosition();
+  }
+
+  function scrollSamplePromptsIntoView() {
+    if (!isMobileLayout() || !samplePrompts || samplePrompts.hidden) return;
+    window.requestAnimationFrame(function () {
+      samplePrompts.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function syncAnchorFromElement(el) {
@@ -230,11 +278,12 @@
     loadEmbed();
     spotlightStopped = false;
     panel.classList.remove("is-hidden");
-    applyAnchor(panel);
     launcher.classList.add("is-hidden");
     panel.setAttribute("aria-hidden", "false");
     launcher.setAttribute("aria-expanded", "true");
     togglePromptPanel(true);
+    syncResponsiveLayout();
+    scrollSamplePromptsIntoView();
   }
 
   function stopPopOutWatcher() {
@@ -248,6 +297,7 @@
     panel.classList.add("is-hidden");
     panel.setAttribute("aria-hidden", "true");
     panelHiddenForPopOut = true;
+    syncResponsiveLayout();
   }
 
   function restorePanelAfterPopOut() {
@@ -257,6 +307,7 @@
       panel.classList.remove("is-hidden");
       panel.setAttribute("aria-hidden", "false");
     }
+    syncResponsiveLayout();
   }
 
   function startPopOutWatcher() {
@@ -284,6 +335,7 @@
     panel.setAttribute("aria-hidden", "true");
     launcher.setAttribute("aria-expanded", "false");
     togglePromptPanel(false);
+    syncResponsiveLayout();
   }
 
   if (promptList) {
@@ -389,6 +441,7 @@
 
   btnPop &&
     btnPop.addEventListener("click", function () {
+      if (!isPopOutEnabled()) return;
       var url = iframe.getAttribute("data-src") || "/embed/";
       var features =
         "width=420,height=640,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=no";
@@ -418,6 +471,7 @@
 
     header.addEventListener("pointerdown", function (e) {
       if (e.target.closest("button")) return;
+      if (isMobileLayout()) return;
       dragging = true;
       header.classList.add("is-dragging");
       header.setPointerCapture(e.pointerId);
@@ -469,7 +523,7 @@
 
   function keepFloatingUiInView() {
     if (!panel.classList.contains("is-hidden")) {
-      applyAnchor(panel);
+      syncPanelPosition();
     } else if (!launcher.classList.contains("is-hidden")) {
       applyAnchor(launcher);
     }
@@ -477,6 +531,16 @@
 
   window.addEventListener("resize", keepFloatingUiInView);
 
+  [MQ_MOBILE, MQ_POPOUT_ENABLED].forEach(function (query) {
+    var mq = window.matchMedia(query);
+    if (typeof mq.addEventListener === "function") {
+      mq.addEventListener("change", syncResponsiveLayout);
+    } else if (typeof mq.addListener === "function") {
+      mq.addListener(syncResponsiveLayout);
+    }
+  });
+
   togglePromptPanel(false);
   keepFloatingUiInView();
+  syncResponsiveLayout();
 })();
