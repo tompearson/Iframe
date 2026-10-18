@@ -18,6 +18,21 @@
   background: var(--accent, #8b6914);
   box-shadow: 0 8px 24px rgba(44, 40, 37, 0.22);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: launcher-attention 2.2s ease-in-out infinite;
+}
+
+@keyframes launcher-attention {
+  0%,
+  100% {
+    filter: brightness(0.92);
+    box-shadow: 0 8px 24px rgba(44, 40, 37, 0.22);
+  }
+  50% {
+    filter: brightness(1.45);
+    box-shadow:
+      0 0 0 4px rgba(232, 220, 200, 0.85),
+      0 12px 32px rgba(139, 105, 20, 0.45);
+  }
 }
 
 .chat-launcher:hover {
@@ -29,6 +44,14 @@
   cursor: grabbing;
   transform: none;
   box-shadow: 0 12px 28px rgba(44, 40, 37, 0.26);
+  animation: none;
+  filter: brightness(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-launcher {
+    animation: none;
+  }
 }
 
 .chat-launcher.is-hidden {
