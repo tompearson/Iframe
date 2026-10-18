@@ -5,6 +5,15 @@
     "What is included in the on-demand video library?",
     "Do you offer classes for hypermobility?",
     "What retreats are scheduled for 2026?",
+    "Who are on staff?",
+    "How are payments made?",
+    "What if I'm late on payment?",
+    "Are the staff trained?",
+    "Can my child be helped?",
+    "Do you take any insurance?",
+    "I have an open wound?",
+    "Can you treat me at my home?",
+    "Is there nearby public transportation?",
   ];
   var CLEAR_SAMPLE_LABEL = "Ask your own question";
 
