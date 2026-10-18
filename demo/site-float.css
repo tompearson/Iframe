@@ -11,7 +11,9 @@
   font: inherit;
   font-size: 0.92rem;
   font-weight: 600;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
   color: #fff;
   background: var(--accent, #8b6914);
   box-shadow: 0 8px 24px rgba(44, 40, 37, 0.22);
@@ -20,6 +22,12 @@
 
 .chat-launcher:hover {
   transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(44, 40, 37, 0.26);
+}
+
+.chat-launcher.is-dragging {
+  cursor: grabbing;
+  transform: none;
   box-shadow: 0 12px 28px rgba(44, 40, 37, 0.26);
 }
 
@@ -100,10 +108,122 @@
   min-height: 0;
 }
 
+#float-demo {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: #3a3632;
+}
+
+#float-demo h2 {
+  font-size: 1.5rem;
+  color: #2c2825;
+}
+
+#float-demo p {
+  color: #3a3632;
+}
+
 .float-copy {
   max-width: 40rem;
 }
 
 .float-copy code {
-  font-size: 0.88em;
+  font-size: 0.9em;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.float-copy h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--accent, #8b6914);
+}
+
+.float-copy ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.35rem;
+  color: #3a3632;
+  font-size: 1.02rem;
+}
+
+.sample-prompt-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sample-prompt-list button {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border, #ddd5cb);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text, #2c2825);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sample-prompt-list button:hover,
+.sample-prompt-list button:focus-visible {
+  border-color: var(--accent, #8b6914);
+  background: var(--accent-soft, #e8dcc8);
+  outline: none;
+}
+
+.sample-prompt-list button.sample-prompt-clear {
+  font-style: italic;
+  color: #524c47;
+}
+
+.sample-prompt-list button.is-spotlight {
+  border-color: var(--accent, #8b6914);
+  background: var(--accent-soft, #e8dcc8);
+  animation: prompt-spotlight-flash 1.1s ease-in-out;
+  box-shadow: 0 0 0 2px rgba(139, 105, 20, 0.35);
+}
+
+@keyframes prompt-spotlight-flash {
+  0%,
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  15%,
+  45%,
+  75% {
+    filter: brightness(1.08);
+    transform: scale(1.01);
+  }
+  30%,
+  60% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sample-prompt-list button.is-spotlight {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--accent, #8b6914);
+  }
+}
+
+.prompt-status {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  color: #524c47;
+  min-height: 1.25rem;
+}
+
+.prompt-status:empty {
+  display: none;
 }

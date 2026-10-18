@@ -7,10 +7,11 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 1. [Status](#status)
 2. [Documentation](#documentation)
 3. [One command (recommended)](#one-command-recommended)
-4. [Local dev (two terminals)](#local-dev-two-terminals)
-5. [Vercel (staging / production)](#vercel-staging--production)
-6. [Architecture notes (limits, single-turn)](#architecture-notes-limits-single-turn)
-7. [Repo layout](#repo-layout)
+4. [Local dev — test `/float`](#local-dev--test-float)
+5. [Local dev (two terminals)](#local-dev-two-terminals)
+6. [Vercel (staging / production)](#vercel-staging--production)
+7. [Architecture notes (limits, single-turn)](#architecture-notes-limits-single-turn)
+8. [Repo layout](#repo-layout)
 
 ---
 
@@ -67,6 +68,51 @@ Starts **uvicorn** on `127.0.0.1:8000` and **`dev_server.py`** on `127.0.0.1:878
 
 ---
 
+## Local dev — test `/float`
+
+Use this to exercise the **floating chat preview** (`/float`), including **demo-only sample questions** (defined in `demo/site-float.*` — not shipped in production `/embed/`).
+
+**Prerequisites**
+
+- [`Iframe/.env`](.env): `RAG_API_URL=http://127.0.0.1:8000` and `RAG_SERVICE_SECRET` **identical** to [`documentation-helper/.env`](../documentation-helper/.env).
+- Sibling repo at `~/Projects/Santosha/documentation-helper` (required by `start-local-demo.sh`).
+
+**Start RAG + BFF**
+
+```bash
+cd ~/Projects/Santosha/Iframe
+./scripts/start-local-demo.sh --kill
+```
+
+Use `--kill` if ports `8000` / `8780` are stuck or an old `dev_server.py` is still running.
+
+**Open in browser**
+
+```text
+http://127.0.0.1:8780/float
+```
+
+`./scripts/start-local-demo.sh --open` opens **`/demo/`** only — navigate to **`/float`** manually for this page.
+
+**Two-terminal alternative**
+
+```bash
+# Terminal 1 — RAG
+export PATH="$HOME/.local/bin:$PATH"
+cd ~/Projects/Santosha/documentation-helper
+pipenv run uvicorn rag_api_gemini:app --host 127.0.0.1 --port 8000
+
+# Terminal 2 — Iframe BFF + static
+cd ~/Projects/Santosha/Iframe
+python3 dev_server.py
+```
+
+Then open **http://127.0.0.1:8780/float**. Open the **Ask Santosha** floater, pick a sample question (when available), and click **Send** in the chat panel.
+
+Production preview: **https://iframe-sage-two.vercel.app/float** (see [docs/VERCEL.md](docs/VERCEL.md)).
+
+---
+
 ## Local dev (two terminals)
 
 **Terminal 1 — RAG API**
@@ -116,7 +162,7 @@ Optional local Vercel parity: `npx vercel dev`.
 
 ```
 embed/           # widget (HTML/CSS/JS)
-demo/            # mock parent (/demo) + site preview (/site)
+demo/            # mock parent (/demo), /site, /float (demo-only sample prompts)
 api/query.js     # Vercel serverless BFF
 lib/             # shared Python (dev_server)
 dev_server.py    # local BFF + static

@@ -46,31 +46,34 @@
 
   <section class="hero">
     <h1>Santosha Pilates Movement Therapy</h1>
-    <p>
-      Same site shell as the inline preview — the assistant lives in a detached floating window
-      instead of a column on the page.
-    </p>
+    <p>The assistant lives in a detached floating window.</p>
   </section>
 
   <main class="content" id="float-demo">
     <section class="float-copy">
       <h2>Floating chat preview</h2>
       <p>
-        Use the <strong>Ask Santosha</strong> button at the bottom-right to open the chat in a
-        floating panel. Drag it by the title bar, minimize to the launcher, or use
-        <strong>↗</strong> to open <code>/embed/</code> in a separate browser window.
+        QA preview for the floating chat. Follow the steps below; use <strong>↗</strong> in the panel
+        header to open <code>/embed/</code> in a separate browser window.
       </p>
-      <p>
-        Compare with the <a href="/site">inline iframe layout</a> on <code>/site</code>.
-        Production Squarespace would typically use a code block or plugin pattern similar to this
-        launcher + floating panel.
-      </p>
-      <h3>The 3-part blended approach</h3>
-      <ul>
-        <li><strong>Private sessions</strong> — personalized movement plans and recap notes.</li>
-        <li><strong>Classes &amp; small groups</strong> — online and in-person practice with feedback.</li>
-        <li><strong>Tailored on-demand videos</strong> — recommended at every private session.</li>
-      </ul>
+      <div id="how-to-test">
+        <h3>How to test</h3>
+        <ol>
+          <li>
+            <em>(Optional)</em> <strong>Drag</strong> the <strong>Ask Santosha</strong> button
+            (bottom-right) to move it on the page, or just click it to open the Ask Santosha chat.
+          </li>
+          <li>With the Ask Santosha chat open, drag the panel by its title bar to reposition it.</li>
+          <li>Click a sample question when it highlights in the list below.</li>
+          <li>Click <strong>Send</strong> in the chat panel (or press Enter).</li>
+          <li>Try your own question — type in the chat box instead of using a sample.</li>
+        </ol>
+      </div>
+      <div id="sample-prompts" class="is-hidden" hidden>
+        <h3>Pick a question to load into the chat</h3>
+        <ul id="sample-prompt-list" class="sample-prompt-list"></ul>
+      </div>
+      <p id="prompt-status" class="prompt-status" role="status" aria-live="polite"></p>
     </section>
   </main>
 
