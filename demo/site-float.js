@@ -197,6 +197,15 @@
     }
   }
 
+  function focusOrBlurEmbedInput(input, preferFocus) {
+    if (!input) return;
+    if (preferFocus || window.matchMedia(MQ_POPOUT_ENABLED).matches) {
+      input.focus();
+      return;
+    }
+    input.blur();
+  }
+
   function injectIntoPanelIframe(text) {
     try {
       var doc = iframe.contentDocument;
@@ -204,7 +213,7 @@
       var input = doc.getElementById("input");
       if (!input) return false;
       input.value = String(text).slice(0, 1000);
-      input.focus();
+      focusOrBlurEmbedInput(input, false);
       return true;
     } catch (_err) {
       return false;
@@ -232,7 +241,7 @@
       var input = doc && doc.getElementById("input");
       if (input) {
         input.value = "";
-        input.focus();
+        focusOrBlurEmbedInput(input, true);
       }
     } catch (_err) {
       /* ignore */
