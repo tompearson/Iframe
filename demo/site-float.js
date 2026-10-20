@@ -28,7 +28,7 @@
     "What postpartum Pilates offerings or guidance does Santosha provide?",
     "What is the Reset program or offering at Santosha Pilates?",
     "How does the SMS video library work for on-demand videos at Santosha?",
-    "What do client testimonials say about training at Santosha Pilates?",
+    "Are there reviews of the business?",
   ];
 
   var CLEAR_SAMPLE_LABEL = "Ask your own question";

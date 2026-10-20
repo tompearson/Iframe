@@ -18,9 +18,112 @@
     return id;
   }
 
+  const SANTOSHA_SITE = "https://www.santoshapilates.com";
+
+  /** Squarespace paths that redirect; use canonical href in the widget. */
+  const SANTOSHA_PATH_REDIRECTS = {
+    "/about": "/about-santosha-pilates",
+    "/classes": "/virtual-classes",
+    "/home-1": "/offerings",
+  };
+
+  function normalizeSourceUrl(url) {
+    const raw = String(url || "").trim();
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    try {
+      const parsed = new URL(raw);
+      if (!/^(www\.)?santoshapilates\.com$/i.test(parsed.hostname)) return raw;
+      parsed.protocol = "https:";
+      parsed.hostname = "www.santoshapilates.com";
+      const pathKey = parsed.pathname.replace(/\/$/, "") || "/";
+      if (SANTOSHA_PATH_REDIRECTS[pathKey]) {
+        parsed.pathname = SANTOSHA_PATH_REDIRECTS[pathKey];
+      }
+      parsed.search = "";
+      parsed.hash = "";
+      return parsed.href;
+    } catch (_err) {
+      return raw;
+    }
+  }
+
+  function markdownLinksForUrls(urls) {
+    return urls
+      .map((u) => {
+        const href = normalizeSourceUrl(u.trim());
+        return `[${href}](${href})`;
+      })
+      .join(" ");
+  }
+
+  /** RAG cites as [https://…], [Source: url], or comma-separated lists — not valid GFM links. */
+  function prepareAssistantMarkdown(text) {
+    let s = String(text || "");
+    s = s.replace(/\[([^\]]+)\]/g, (match, inner) => {
+      const urls = inner.match(/https?:\/\/[^\s,\]\)]+/gi);
+      if (!urls || !urls.length) return match;
+      const remainder = inner
+        .replace(/https?:\/\/[^\s,\]\)]+/gi, "")
+        .replace(/sources?/gi, "")
+        .replace(/[:\s,]/g, "");
+      if (remainder.length > 0) return match;
+      return markdownLinksForUrls(urls);
+    });
+    s = s.replace(/(?<!\]\()(https?:\/\/[^\s<>\]\)]+)/gi, (raw) => {
+      const trimmed = raw.replace(/[.,;:!?)]+$/, "");
+      const punct = raw.slice(trimmed.length);
+      return markdownLinksForUrls([trimmed]) + punct;
+    });
+    s = s.replace(
+      /(?<!\]\()(?<!\()(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi,
+      (path) => {
+        const href = normalizeSourceUrl(SANTOSHA_SITE + path);
+        return `[${path}](${href})`;
+      }
+    );
+    return s;
+  }
+
+  function urlsMentionedInAnswer(text) {
+    const urls = [];
+    const str = String(text || "");
+    const httpRe = /https?:\/\/[^\s<>\]\)]+/gi;
+    let match;
+    while ((match = httpRe.exec(str))) {
+      urls.push(normalizeSourceUrl(match[0].replace(/[.,;:!?)]+$/, "")));
+    }
+    const pathRe = /(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi;
+    while ((match = pathRe.exec(str))) {
+      urls.push(normalizeSourceUrl(SANTOSHA_SITE + match[1]));
+    }
+    return urls;
+  }
+
+  /** Prefer pages cited in the answer; RAG Sources often omit or duplicate unrelated URLs. */
+  function mergeDisplaySources(apiSources, answerText) {
+    const answer = String(answerText || "");
+    const seen = new Set();
+    const out = [];
+
+    function push(url) {
+      const href = normalizeSourceUrl(url);
+      if (!href || !/^https?:\/\//i.test(href) || seen.has(href)) return;
+      seen.add(href);
+      out.push(href);
+    }
+
+    if (/testimonials/i.test(answer)) {
+      push(SANTOSHA_SITE + "/testimonials-1");
+    }
+    urlsMentionedInAnswer(answer).forEach(push);
+    (apiSources || []).forEach(push);
+
+    return out;
+  }
+
   /** Fallback when CDN scripts fail to load (offline). */
   function markdownFallback(text) {
-    let s = text
+    let s = prepareAssistantMarkdown(text)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
@@ -35,7 +138,7 @@
   }
 
   function renderAssistantHtml(text) {
-    const raw = String(text || "").trim();
+    const raw = prepareAssistantMarkdown(String(text || "").trim());
     if (!raw) return "";
 
     if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
@@ -73,6 +176,8 @@
     if (role === "assistant") {
       body.innerHTML = renderAssistantHtml(text);
       body.querySelectorAll("a").forEach((a) => {
+        const href = normalizeSourceUrl(a.getAttribute("href") || a.href);
+        if (href) a.setAttribute("href", href);
         a.target = "_blank";
         a.rel = "noopener noreferrer";
       });
@@ -97,10 +202,11 @@
       sources.forEach((url) => {
         const li = document.createElement("li");
         const a = document.createElement("a");
-        a.href = url;
+        const href = normalizeSourceUrl(url);
+        a.href = href;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
-        a.textContent = url;
+        a.textContent = href;
         li.appendChild(a);
         ul.appendChild(li);
       });
@@ -185,7 +291,12 @@
         return;
       }
 
-      appendMessage("assistant", data.answer || "(No answer returned.)", data.sources || []);
+      const answer = data.answer || "(No answer returned.)";
+      appendMessage(
+        "assistant",
+        answer,
+        mergeDisplaySources(data.sources || [], answer)
+      );
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);
       } else {
