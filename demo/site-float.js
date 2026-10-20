@@ -1,20 +1,36 @@
 (function () {
-  var SAMPLE_PROMPTS = [
-    "What is the Santosha Movement Society and how do I join?",
-    "How do I book a private Pilates Movement Therapy session?",
-    "What is included in the on-demand video library?",
-    "Do you offer classes for hypermobility?",
-    "What retreats are scheduled for 2026?",
-    "Who are on staff?",
-    "How are payments made?",
-    "What if I'm late on payment?",
-    "Are the staff trained?",
-    "Can my child be helped?",
-    "Do you take any insurance?",
-    "I have an open wound?",
-    "Can you treat me at my home?",
-    "Is there nearby public transportation?",
+  /**
+   * RAG smoke prompts aligned with documentation-helper
+   * scripts/compare_pinecone_namespaces.py report (20261020 recrawl).
+   * Each question should surface its path in chat Sources when live reads
+   * santosha-20261020.
+   */
+  var PROMPTS_URLS_IN_BOTH = [
+    "What is Santosha Pilates and what do they offer on their home page?",
+    "What is Santosha Movement Society and what is their approach to Pilates?",
+    "What topics does the Santosha Pilates blog cover recently?",
+    "How do I book private Pilates sessions at Santosha?",
+    "What courses or multi-session programs does Santosha Pilates offer?",
+    "What is hypermobility on-demand content at Santosha?",
+    "Does Santosha offer infant CST or related services — what are they?",
+    "Who are the instructors at Santosha Pilates and what are their backgrounds?",
+    "What does Santosha's privacy policy say about how they use personal information?",
+    "What can I buy in the Santosha Pilates online store?",
   ];
+
+  var PROMPTS_URLS_LATEST_ONLY = [
+    "What does Santosha Pilates say on the About page about the studio and what makes it different?",
+    "How do I view or checkout items in the cart on the Santosha website?",
+    "How can I contact Santosha Pilates — phone, email, or location?",
+    "What frequently asked questions does Santosha answer for new clients?",
+    "Does Santosha offer classes or programs for hypermobility, and what do they recommend?",
+    "What is the Pilates sound bath at Santosha and how do I sign up or learn more?",
+    "What postpartum Pilates offerings or guidance does Santosha provide?",
+    "What is the Reset program or offering at Santosha Pilates?",
+    "How does the SMS video library work for on-demand videos at Santosha?",
+    "What do client testimonials say about training at Santosha Pilates?",
+  ];
+
   var CLEAR_SAMPLE_LABEL = "Ask your own question";
 
   var launcher = document.getElementById("chat-launcher");
@@ -26,7 +42,8 @@
   var btnPop = document.getElementById("chat-popout");
   var howToTest = document.getElementById("how-to-test");
   var samplePrompts = document.getElementById("sample-prompts");
-  var promptList = document.getElementById("sample-prompt-list");
+  var promptListBoth = document.getElementById("prompt-list-both");
+  var promptListLatest = document.getElementById("prompt-list-latest");
   var promptStatus = document.getElementById("prompt-status");
 
   if (!launcher || !panel || !iframe) return;
@@ -356,8 +373,9 @@
     syncResponsiveLayout();
   }
 
-  if (promptList) {
-    SAMPLE_PROMPTS.forEach(function (text) {
+  function appendPromptButtons(listEl, prompts) {
+    if (!listEl) return;
+    prompts.forEach(function (text) {
       var li = document.createElement("li");
       var btn = document.createElement("button");
       btn.type = "button";
@@ -368,38 +386,50 @@
         tryInject(text);
       });
       li.appendChild(btn);
-      promptList.appendChild(li);
+      listEl.appendChild(li);
       promptButtons.push(btn);
     });
+  }
 
-    var clearLi = document.createElement("li");
-    var clearBtn = document.createElement("button");
-    clearBtn.type = "button";
-    clearBtn.className = "sample-prompt-clear";
-    clearBtn.textContent = CLEAR_SAMPLE_LABEL;
-    clearBtn.addEventListener("click", function () {
-      spotlightStopped = true;
-      stopPromptSpotlight();
-      clearChatInput();
-    });
-    clearLi.appendChild(clearBtn);
-    promptList.appendChild(clearLi);
+  if (promptListBoth || promptListLatest) {
+    appendPromptButtons(promptListBoth, PROMPTS_URLS_IN_BOTH);
+    appendPromptButtons(promptListLatest, PROMPTS_URLS_LATEST_ONLY);
 
-    promptList.addEventListener("mouseenter", function () {
-      spotlightPaused = true;
-      clearSpotlightClasses();
-      if (spotlightTimer) {
-        window.clearInterval(spotlightTimer);
-        spotlightTimer = null;
-      }
-    });
-    promptList.addEventListener("mouseleave", function () {
-      spotlightPaused = false;
-      if (samplePrompts && !samplePrompts.hidden && !spotlightStopped && !spotlightTimer) {
-        advanceSpotlight();
-        spotlightTimer = window.setInterval(advanceSpotlight, SPOTLIGHT_INTERVAL_MS);
-      }
-    });
+    if (promptListLatest) {
+      var clearLi = document.createElement("li");
+      var clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.className = "sample-prompt-clear";
+      clearBtn.textContent = CLEAR_SAMPLE_LABEL;
+      clearBtn.addEventListener("click", function () {
+        spotlightStopped = true;
+        stopPromptSpotlight();
+        clearChatInput();
+      });
+      clearLi.appendChild(clearBtn);
+      promptListLatest.appendChild(clearLi);
+    }
+
+    function bindSpotlightPause(listEl) {
+      if (!listEl) return;
+      listEl.addEventListener("mouseenter", function () {
+        spotlightPaused = true;
+        clearSpotlightClasses();
+        if (spotlightTimer) {
+          window.clearInterval(spotlightTimer);
+          spotlightTimer = null;
+        }
+      });
+      listEl.addEventListener("mouseleave", function () {
+        spotlightPaused = false;
+        if (samplePrompts && !samplePrompts.hidden && !spotlightStopped && !spotlightTimer) {
+          advanceSpotlight();
+          spotlightTimer = window.setInterval(advanceSpotlight, SPOTLIGHT_INTERVAL_MS);
+        }
+      });
+    }
+    bindSpotlightPause(promptListBoth);
+    bindSpotlightPause(promptListLatest);
   }
 
   /* Drag launcher button; short press without move opens chat */

@@ -182,6 +182,19 @@
   font-size: 1.02rem;
 }
 
+.prompt-group-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted, #555);
+  margin: 0 0 0.75rem;
+  line-height: 1.45;
+}
+
+.prompt-group-heading {
+  font-size: 0.95rem;
+  margin: 1rem 0 0.5rem;
+  font-weight: 600;
+}
+
 .sample-prompt-list {
   list-style: none;
   margin: 0.75rem 0 0;

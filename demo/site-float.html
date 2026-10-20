@@ -61,15 +61,22 @@
         <ol>
           <li>Click on the Ask Santosha floating button and continue.</li>
           <li>
-            Choose a question by clicking on one in the Pick a Question section which will then load it into the chat.
+            Choose a smoke-test question below (both namespaces vs latest-only); it loads into the chat.
           </li>
           <li>Click <strong>Send</strong> in the chat panel (or press Enter).</li>
-          <li>Try your own question — type in the chat box instead of using a sample.</li>
+          <li>Try your own question — type in the chat box instead of using a preset below.</li>
         </ol>
       </div>
       <div id="sample-prompts" class="is-hidden" hidden>
-        <h3>Pick a Question section — load into the chat</h3>
-        <ul id="sample-prompt-list" class="sample-prompt-list"></ul>
+        <h3>RAG smoke tests — load into the chat</h3>
+        <p class="prompt-group-desc">
+          From Pinecone namespace diff (<code>__default__</code> vs
+          <code>santosha-20261020</code>). Check <strong>Sources</strong> for the matching URL.
+        </p>
+        <h4 class="prompt-group-heading">URLs in both namespaces</h4>
+        <ul id="prompt-list-both" class="sample-prompt-list"></ul>
+        <h4 class="prompt-group-heading">URLs only in latest crawl</h4>
+        <ul id="prompt-list-latest" class="sample-prompt-list"></ul>
       </div>
       <p id="prompt-status" class="prompt-status" role="status" aria-live="polite"></p>
     </section>
