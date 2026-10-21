@@ -396,50 +396,72 @@
     return text + "\n\n" + urls.map((u) => markdownLink(u)).join("\n");
   }
 
-  /** Fallback when CDN scripts fail to load (offline). */
-  function markdownFallback(text, sourceHints) {
-    let s = injectHtmlLinks(prepareAssistantMarkdown(text, sourceHints), sourceHints);
-    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    s = s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
-    return s;
+  const ASSISTANT_HTML_SANITIZE = {
+    ALLOWED_TAGS: [
+      "p",
+      "br",
+      "strong",
+      "em",
+      "b",
+      "i",
+      "ul",
+      "ol",
+      "li",
+      "a",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "code",
+    ],
+    ALLOWED_ATTR: ["href", "target", "rel", "class"],
+  };
+
+  /** Markdown → safe HTML; link passes run after marked (mixing HTML before marked breaks WebKit). */
+  function finishAssistantHtml(htmlOrMarkdown, sourceHints, fromMarked) {
+    let s = String(htmlOrMarkdown || "");
+    if (!fromMarked) {
+      s = injectHtmlLinks(s, sourceHints);
+    }
+    s = linkifyRemainingMarkdownInHtml(s, sourceHints);
+    s = injectHtmlLinks(s, sourceHints);
+    if (typeof DOMPurify === "undefined") {
+      s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      return s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+    }
+    return DOMPurify.sanitize(s, ASSISTANT_HTML_SANITIZE);
+  }
+
+  /** Fallback when marked CDN fails; `prepared` is already normalized markdown. */
+  function markdownFallback(prepared, sourceHints) {
+    return finishAssistantHtml(prepared, sourceHints, false);
   }
 
   function renderAssistantHtml(text, sourceHints) {
     const hints = sourceHints || [];
     const prepared = prepareAssistantMarkdown(String(text || "").trim(), hints);
-    const raw = injectHtmlLinks(prepared, hints);
     
-    if (!raw) return "";
+    if (!prepared) return "";
 
-    if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
+    const touchPrimary =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+    if (
+      !touchPrimary &&
+      typeof marked !== "undefined" &&
+      typeof DOMPurify !== "undefined"
+    ) {
       marked.setOptions({ breaks: true, gfm: true });
-      const sanitizeOpts = {
-        ALLOWED_TAGS: [
-          "p",
-          "br",
-          "strong",
-          "em",
-          "b",
-          "i",
-          "ul",
-          "ol",
-          "li",
-          "a",
-          "h1",
-          "h2",
-          "h3",
-          "h4",
-          "code",
-        ],
-        ALLOWED_ATTR: ["href", "target", "rel", "class"],
-      };
-      const parsed = marked.parse(raw);
-      let clean = DOMPurify.sanitize(parsed, sanitizeOpts);
-      clean = DOMPurify.sanitize(linkifyRemainingMarkdownInHtml(clean, hints), sanitizeOpts);
-      return clean;
+      const parsed = marked.parse(prepared);
+      return finishAssistantHtml(
+        DOMPurify.sanitize(parsed, ASSISTANT_HTML_SANITIZE),
+        hints,
+        true
+      );
     }
-    return markdownFallback(raw, hints);
+    return markdownFallback(prepared, hints);
   }
 
   function fillMessageBody(container, role, text, sourceHints) {
