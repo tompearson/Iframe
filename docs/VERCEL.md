@@ -75,5 +75,6 @@ Read **[ARCHITECTURE_NOTES.md](ARCHITECTURE_NOTES.md)** before changing auth or 
 | 429 | Turn limits; Clear chat (new session id) |
 | Blank iframe on external site | CSP `frame-ancestors`; parent site iframe policy |
 | Markdown looks raw | Hard refresh; `embed.js` loads marked/DOMPurify from CDN |
+| Prod differs from local / git `main` | Vercel **Production** deploy may be stale — redeploy latest `main`; compare `demo/site-float.js` / `embed/embed.js` size or `?v=` on script tags in page source |
 
 More: [PRODUCTION_EMBED.md](PRODUCTION_EMBED.md).
