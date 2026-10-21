@@ -49,6 +49,8 @@
   if (!launcher || !panel || !iframe) return;
 
   var MQ_MOBILE = "(max-width: 768px)";
+  /** Phones + tablets (touch): full-width chat sheet instead of 400px floating box. */
+  var MQ_TOUCH_CHAT = "(max-width: 1024px), (hover: none) and (pointer: coarse)";
   var MQ_POPOUT_ENABLED = "(min-width: 769px) and (hover: hover) and (pointer: fine)";
 
   var embedLoaded = false;
@@ -100,13 +102,17 @@
     return window.matchMedia(MQ_MOBILE).matches;
   }
 
+  function isTouchChatLayout() {
+    return window.matchMedia(MQ_TOUCH_CHAT).matches;
+  }
+
   function isPopOutEnabled() {
     return window.matchMedia(MQ_POPOUT_ENABLED).matches;
   }
 
   function syncPanelPosition() {
     if (panel.classList.contains("is-hidden")) return;
-    if (isMobileLayout()) {
+    if (isTouchChatLayout()) {
       clearPanelInlinePosition();
       return;
     }
@@ -114,9 +120,8 @@
   }
 
   function syncResponsiveLayout() {
-    var mobile = isMobileLayout();
     var chatOpen = launcher.classList.contains("is-hidden");
-    document.body.classList.toggle("float-chat-open", chatOpen && mobile);
+    document.body.classList.toggle("float-chat-open", chatOpen && isTouchChatLayout());
     if (btnPop) {
       btnPop.disabled = !isPopOutEnabled();
       btnPop.setAttribute("aria-hidden", isPopOutEnabled() ? "false" : "true");
@@ -448,7 +453,7 @@
 
     header.addEventListener("pointerdown", function (e) {
       if (e.target.closest("button")) return;
-      if (isMobileLayout()) return;
+      if (isTouchChatLayout()) return;
       dragging = true;
       header.classList.add("is-dragging");
       header.setPointerCapture(e.pointerId);
@@ -508,7 +513,7 @@
 
   window.addEventListener("resize", keepFloatingUiInView);
 
-  [MQ_MOBILE, MQ_POPOUT_ENABLED].forEach(function (query) {
+  [MQ_MOBILE, MQ_TOUCH_CHAT, MQ_POPOUT_ENABLED].forEach(function (query) {
     var mq = window.matchMedia(query);
     if (typeof mq.addEventListener === "function") {
       mq.addEventListener("change", syncResponsiveLayout);

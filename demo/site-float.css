@@ -244,9 +244,9 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px), ((hover: none) and (pointer: coarse)) {
   :root {
-    --float-mobile-chat-height: 72dvh;
+    --float-mobile-chat-height: min(72dvh, 640px);
   }
 
   body.float-chat-open {

@@ -22,6 +22,8 @@ html,
 body {
   margin: 0;
   height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
@@ -62,6 +64,7 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   padding: 1rem;
   display: flex;
@@ -242,5 +245,45 @@ body {
     max-height: 4.5rem;
     width: 100%;
     max-width: 100%;
+  }
+}
+
+/* Tablets + touch: same full-width embed behavior as phones (iframe in /float). */
+@media (max-width: 1024px), ((hover: none) and (pointer: coarse)) {
+  .header {
+    display: none;
+  }
+
+  .app {
+    max-width: 100%;
+  }
+
+  .msg {
+    max-width: 100%;
+    align-self: stretch;
+  }
+
+  .messages {
+    padding: 0.65rem max(0.65rem, env(safe-area-inset-left, 0px))
+      0.65rem max(0.65rem, env(safe-area-inset-right, 0px));
+  }
+
+  .composer {
+    padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .msg-body ol {
+    list-style-position: inside;
+    padding-left: 0.25rem;
+  }
+
+  .msg-body ul {
+    padding-left: 1.1rem;
+  }
+
+  .msg-body a.prose-citation-link {
+    word-break: break-all;
   }
 }
