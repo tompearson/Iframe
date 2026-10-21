@@ -97,11 +97,73 @@
     );
   }
 
-  /** GFM/marked sometimes leaves [text](url) as plain text; inject real anchors before parse. */
-  function injectHtmlLinks(s) {
-    return s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi, (_, _label, href) =>
-      anchorHtml(href)
+  function normalizeCitationText(text) {
+    return String(text || "")
+      .replace(/\uFF3B/g, "[")
+      .replace(/\uFF3D/g, "]");
+  }
+
+  /** Narrow viewports often break GFM as `[label]\n(url)` or `[label] (url)`. */
+  function repairMarkdownLinkSyntax(text) {
+    return String(text || "")
+      .replace(/\]\s*\r?\n\s*\(/g, "](")
+      .replace(/\]\s+\(/g, "](")
+      .replace(/\[([^\]]+)\]\(\s*(https?:\/\/[^)]+)\)/gi, (_m, label, dest) => {
+        const url = dest.replace(/[\r\n\t ]+/g, "");
+        return `[${label}](${url})`;
+      });
+  }
+
+  function hrefFromSourceHints(label, hints) {
+    const t = String(label || "").trim().toLowerCase();
+    const list = hints || [];
+    if (!t || !list.length) return null;
+
+    for (const raw of list) {
+      const url = normalizeSourceUrl(raw);
+      if (!isPlausibleSourceUrl(url)) continue;
+      let path = "/";
+      try {
+        path = new URL(url).pathname.replace(/\/$/, "") || "/";
+      } catch (_err) {
+        continue;
+      }
+      const slug = path.split("/").filter(Boolean).pop() || "";
+      const slugWords = slug.replace(/-/g, " ");
+      if (slugWords && t.includes(slugWords)) return url;
+      if (/\babout\b/.test(t) && /about/i.test(path)) return url;
+      if (/(private|book)/.test(t) && /bookprivate/i.test(path)) return url;
+      if (/\bhome\b/.test(t) && (path === "/" || /offerings/i.test(path))) return url;
+    }
+
+    if (/\babout\b/.test(t)) {
+      const about = list.find((u) => /about-santosha/i.test(String(u)));
+      if (about) return normalizeSourceUrl(about);
+    }
+    return null;
+  }
+
+  function resolveLinkDest(label, dest, sourceHints) {
+    const d = String(dest || "").replace(/[\r\n\t ]+/g, "");
+    if (/^https?:\/\//i.test(d)) return normalizeSourceUrl(d);
+    if (d.startsWith("/")) return normalizeSourceUrl(SANTOSHA_SITE + d);
+    return (
+      hrefForCitationLabel(label) ||
+      hrefForCitationLabel(d) ||
+      hrefFromSourceHints(label, sourceHints) ||
+      null
     );
+  }
+
+  /** GFM/marked sometimes leaves [text](url) as plain text; inject real anchors before parse. */
+  function injectHtmlLinks(s, sourceHints) {
+    return s.replace(/\[([^\]]+)\]\(([^)]+)\)/gi, (_, label, dest) => {
+      const href = resolveLinkDest(label, dest, sourceHints);
+      if (href && isPlausibleSourceUrl(href)) return anchorHtml(href);
+      const fromLabel = hrefForCitationLabel(label) || hrefFromSourceHints(label, sourceHints);
+      if (fromLabel) return anchorHtml(fromLabel);
+      return `[${label}](${dest})`;
+    });
   }
 
   /** Model often emits slug labels without brackets (e.g. "bookprivates 1 Home."). */
@@ -134,6 +196,9 @@
     const t = String(label || "").trim();
     if (/home-?1?\s*page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/");
     if (/about page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    if (/\babout\b/i.test(t) && /santosha|pilates|studio|movement therapy/i.test(t)) {
+      return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    }
     if (/movement therapy page/i.test(t)) {
       return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
     }
@@ -149,8 +214,19 @@
   const BARE_URL_RE = /(?<![(\[])(?<!\]\()(https?:\/\/[^\s<>\]\)]+)/gi;
 
   /** RAG cites as labels, [https://…], [Source: url], or comma-separated lists — not always valid GFM. */
-  function prepareAssistantMarkdown(text) {
-    let s = collapseWhitespaceInUrls(String(text || ""));
+  function prepareAssistantMarkdown(text, sourceHints) {
+    let s = repairMarkdownLinkSyntax(
+      collapseWhitespaceInUrls(normalizeCitationText(String(text || "")))
+    );
+
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/gi, (_m, label, dest) => {
+      const href = resolveLinkDest(label, dest, sourceHints);
+      if (href && isPlausibleSourceUrl(href)) return markdownLink(href);
+      if (/^https?:\/\//i.test(dest.replace(/[\r\n\t ]+/g, ""))) {
+        return markdownLink(dest);
+      }
+      return _m;
+    });
 
     s = s.replace(
       /\[(https?:\/\/[^\]\s]+)\]\((https?:\/\/[^)]+)\)/gi,
@@ -188,7 +264,7 @@
           })
           .join(" ");
       }
-      const href = hrefForCitationLabel(label);
+      const href = hrefForCitationLabel(label) || hrefFromSourceHints(label, sourceHints);
       if (href) return markdownLink(href);
       return `*(${label.trim()})*`;
     });
@@ -305,17 +381,18 @@
   }
 
   /** Fallback when CDN scripts fail to load (offline). */
-  function markdownFallback(text) {
-    let s = injectHtmlLinks(prepareAssistantMarkdown(text));
+  function markdownFallback(text, sourceHints) {
+    let s = injectHtmlLinks(prepareAssistantMarkdown(text, sourceHints), sourceHints);
     s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
     s = s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
     return s;
   }
 
-  function renderAssistantHtml(text) {
-    const prepared = prepareAssistantMarkdown(String(text || "").trim());
-    const raw = injectHtmlLinks(prepared);
+  function renderAssistantHtml(text, sourceHints) {
+    const hints = sourceHints || [];
+    const prepared = prepareAssistantMarkdown(String(text || "").trim(), hints);
+    const raw = injectHtmlLinks(prepared, hints);
     
     if (!raw) return "";
 
@@ -344,15 +421,15 @@
       });
       return clean;
     }
-    return markdownFallback(raw);
+    return markdownFallback(raw, hints);
   }
 
-  function fillMessageBody(container, role, text) {
+  function fillMessageBody(container, role, text, sourceHints) {
     const body = document.createElement("div");
     body.className = "msg-body";
 
     if (role === "assistant") {
-      body.innerHTML = renderAssistantHtml(text);
+      body.innerHTML = renderAssistantHtml(text, sourceHints);
       body.querySelectorAll("a").forEach((a) => {
         const href = normalizeSourceUrl(a.getAttribute("href") || a.href);
         if (href && isPlausibleSourceUrl(href)) {
@@ -372,7 +449,7 @@
   function appendMessage(role, text, sources) {
     const div = document.createElement("div");
     div.className = "msg " + role;
-    fillMessageBody(div, role, text);
+    fillMessageBody(div, role, text, role === "assistant" ? sources : null);
 
     if (sources && sources.length) {
       const details = document.createElement("details");
