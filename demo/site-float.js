@@ -145,58 +145,13 @@
     embedLoaded = true;
   }
 
-  var promptButtons = [];
-  var spotlightTimer = null;
-  var spotlightIndex = 0;
-  var spotlightPaused = false;
-  var spotlightStopped = false;
-  var SPOTLIGHT_INTERVAL_MS = 2800;
-
-  function clearSpotlightClasses() {
-    promptButtons.forEach(function (btn) {
-      btn.classList.remove("is-spotlight");
-    });
-  }
-
-  function advanceSpotlight() {
-    if (!promptButtons.length || spotlightPaused || spotlightStopped) return;
-    clearSpotlightClasses();
-    var btn = promptButtons[spotlightIndex];
-    btn.classList.add("is-spotlight");
-    btn.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    spotlightIndex = (spotlightIndex + 1) % promptButtons.length;
-  }
-
-  function stopPromptSpotlight() {
-    if (spotlightTimer) {
-      window.clearInterval(spotlightTimer);
-      spotlightTimer = null;
-    }
-    clearSpotlightClasses();
-  }
-
-  function startPromptSpotlight() {
-    stopPromptSpotlight();
-    if (spotlightStopped || !promptButtons.length) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      advanceSpotlight();
-      return;
-    }
-    spotlightIndex = 0;
-    advanceSpotlight();
-    spotlightTimer = window.setInterval(advanceSpotlight, SPOTLIGHT_INTERVAL_MS);
-  }
-
   function togglePromptPanel(chatOpen) {
     if (samplePrompts) {
       samplePrompts.classList.toggle("is-hidden", !chatOpen);
       samplePrompts.hidden = !chatOpen;
     }
-    if (!chatOpen) {
-      stopPromptSpotlight();
-      if (promptStatus) promptStatus.textContent = "";
-    } else {
-      startPromptSpotlight();
+    if (!chatOpen && promptStatus) {
+      promptStatus.textContent = "";
     }
   }
 
@@ -311,7 +266,6 @@
 
   function openChat() {
     loadEmbed();
-    spotlightStopped = false;
     panel.classList.remove("is-hidden");
     launcher.classList.add("is-hidden");
     panel.setAttribute("aria-hidden", "false");
@@ -381,13 +335,10 @@
       btn.type = "button";
       btn.textContent = text;
       btn.addEventListener("click", function () {
-        spotlightStopped = true;
-        stopPromptSpotlight();
         tryInject(text);
       });
       li.appendChild(btn);
       listEl.appendChild(li);
-      promptButtons.push(btn);
     });
   }
 
@@ -402,34 +353,12 @@
       clearBtn.className = "sample-prompt-clear";
       clearBtn.textContent = CLEAR_SAMPLE_LABEL;
       clearBtn.addEventListener("click", function () {
-        spotlightStopped = true;
-        stopPromptSpotlight();
         clearChatInput();
       });
       clearLi.appendChild(clearBtn);
       promptListLatest.appendChild(clearLi);
     }
 
-    function bindSpotlightPause(listEl) {
-      if (!listEl) return;
-      listEl.addEventListener("mouseenter", function () {
-        spotlightPaused = true;
-        clearSpotlightClasses();
-        if (spotlightTimer) {
-          window.clearInterval(spotlightTimer);
-          spotlightTimer = null;
-        }
-      });
-      listEl.addEventListener("mouseleave", function () {
-        spotlightPaused = false;
-        if (samplePrompts && !samplePrompts.hidden && !spotlightStopped && !spotlightTimer) {
-          advanceSpotlight();
-          spotlightTimer = window.setInterval(advanceSpotlight, SPOTLIGHT_INTERVAL_MS);
-        }
-      });
-    }
-    bindSpotlightPause(promptListBoth);
-    bindSpotlightPause(promptListLatest);
   }
 
   /* Drag launcher button; short press without move opens chat */
