@@ -441,7 +441,6 @@
   function renderAssistantHtml(text, sourceHints) {
     const hints = sourceHints || [];
     const prepared = prepareAssistantMarkdown(String(text || "").trim(), hints);
-    
     if (!prepared) return "";
 
     if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
@@ -472,7 +471,6 @@
         a.target = "_blank";
         a.rel = "noopener noreferrer";
       });
-      
     } else {
       body.textContent = text;
     }
@@ -590,7 +588,6 @@
       const answer = data.answer || "(No answer returned.)";
       const displaySources = mergeDisplaySources(data.sources || [], answer);
       const answerForDisplay = enrichAnswerWithSourceLinks(answer, displaySources);
-      
       appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);

@@ -1,37 +1,10 @@
 /**
  * Embed widget source — edit this file, then compile:
- *   python3 scripts/build_embed.py              → embed/embed.js (ship / Vercel)
- *   python3 scripts/build_embed.py --citation-debug → local NDJSON only
- * See docs/DEV_CITATION_DEBUG.md
+ *   python3 scripts/build_embed.py → embed/embed.js (ship / Vercel)
  */
 (function () {
   const API_BASE = window.EMBED_API_BASE || "/api";
   const SESSION_KEY = "embedSessionId";
-
-  /* @if CITATION_DEBUG */
-  const CITATION_DEBUG_INGEST =
-    "http://127.0.0.1:7389/ingest/a79e6122-602a-47a1-88c4-c2266908101e";
-  const CITATION_DEBUG_SESSION = "ec86b3";
-
-  function citationDebugLog(location, message, data, hypothesisId, runId) {
-    fetch(CITATION_DEBUG_INGEST, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": CITATION_DEBUG_SESSION,
-      },
-      body: JSON.stringify({
-        sessionId: CITATION_DEBUG_SESSION,
-        location,
-        message,
-        data,
-        timestamp: Date.now(),
-        runId: runId || "dev",
-        hypothesisId: hypothesisId || "",
-      }),
-    }).catch(function () {});
-  }
-  /* @endif */
 
   const messagesEl = document.getElementById("messages");
   const form = document.getElementById("form");
@@ -359,15 +332,6 @@
     urlsMentionedInAnswer(answer).forEach(push);
     (apiSources || []).forEach(push);
 
-    /* @if CITATION_DEBUG */
-    citationDebugLog(
-      "embed.js:mergeDisplaySources",
-      "display sources merged",
-      { count: out.length, sources: out },
-      "H2-www-filter"
-    );
-    /* @endif */
-
     return out;
   }
 
@@ -481,18 +445,6 @@
   function renderAssistantHtml(text, sourceHints) {
     const hints = sourceHints || [];
     const prepared = prepareAssistantMarkdown(String(text || "").trim(), hints);
-    /* @if CITATION_DEBUG */
-    citationDebugLog(
-      "embed.js:renderAssistantHtml",
-      "prepare pipeline",
-      {
-        orphanParensUrl: /\]\(https?:\/\/[^)]+\)\(https?:\/\//i.test(prepared),
-        mdLinkCount: (prepared.match(/\]\(https?:\/\//gi) || []).length,
-      },
-      "H1-bracket-split",
-      "dup-fix"
-    );
-    /* @endif */
     if (!prepared) return "";
 
     if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
@@ -523,22 +475,6 @@
         a.target = "_blank";
         a.rel = "noopener noreferrer";
       });
-      /* @if CITATION_DEBUG */
-      citationDebugLog(
-        "embed.js:fillMessageBody",
-        "prose link display",
-        {
-          proseLinks: [...body.querySelectorAll("a")].map(function (a) {
-            return {
-              href: a.getAttribute("href"),
-              text: a.textContent,
-              textIsFullUrl: /^https:\/\/www\.santoshapilates\.com/i.test(String(a.textContent || "")),
-            };
-          }),
-        },
-        "H1-full-url-text"
-      );
-      /* @endif */
     } else {
       body.textContent = text;
     }
@@ -656,24 +592,6 @@
       const answer = data.answer || "(No answer returned.)";
       const displaySources = mergeDisplaySources(data.sources || [], answer);
       const answerForDisplay = enrichAnswerWithSourceLinks(answer, displaySources);
-      /* @if CITATION_DEBUG */
-      citationDebugLog(
-        "embed.js:submit",
-        "answer citation enrich",
-        {
-          rawHadInlineCitations: answerHasInlineCitations(answer),
-          enriched: answerForDisplay !== answer,
-          displaySourceCount: displaySources.length,
-          enrichListLines: (answerForDisplay.match(/^\s*(?:[-*+]|\d+\.)\s+.*\]\(https?:\/\//gim) || [])
-            .length,
-          enrichFooterBlock:
-            /\n\n\[https?:\/\//.test(answerForDisplay) &&
-            !/^\s*(?:[-*+]|\d+\.)\s+/m.test(answer),
-        },
-        "H3-model-omit",
-        "post-fix-2"
-      );
-      /* @endif */
       appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);

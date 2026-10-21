@@ -83,7 +83,7 @@ Iframe/
 
 ## References
 
-- Embed widget: edit `embed/embed.src.js`, then `python3 scripts/build_embed.py` (production `embed.js`). Citation debug: [docs/DEV_CITATION_DEBUG.md](docs/DEV_CITATION_DEBUG.md)
+- Embed widget: edit `embed/embed.src.js`, then `python3 scripts/build_embed.py` (production `embed.js`)
 - Vercel: [docs/VERCEL.md](docs/VERCEL.md)
 - RAG API: `http://127.0.0.1:8000/openapi.json` (local) or Render production URL
 - Render deploy: [`documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md`](../documentation-helper/docs/planning/RENDER_GIT_DEPLOY.md)
