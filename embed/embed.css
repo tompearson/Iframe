@@ -98,14 +98,23 @@ body {
   padding-left: 1.25rem;
 }
 
-.msg-body a {
-  color: var(--accent);
+.msg-body a,
+.msg-body a.prose-citation-link {
+  color: #5c4509;
   font-weight: 600;
   text-decoration: underline;
+  text-decoration-thickness: 2px;
   text-underline-offset: 2px;
   overflow-wrap: anywhere;
   word-break: normal;
   cursor: pointer;
+  -webkit-tap-highlight-color: rgba(139, 105, 20, 0.25);
+}
+
+.msg-body a.prose-citation-link {
+  background: rgba(232, 220, 200, 0.55);
+  padding: 0.12em 0.25em;
+  border-radius: 4px;
 }
 
 .msg.user .msg-body {

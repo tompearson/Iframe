@@ -120,12 +120,28 @@
     const url = normalizeSourceUrl(href);
     if (!isPlausibleSourceUrl(url)) return escapeHtml(url);
     return (
-      '<a href="' +
+      '<a class="prose-citation-link" href="' +
       escapeHtml(url) +
       '" target="_blank" rel="noopener noreferrer">' +
       escapeHtml(url) +
       "</a>"
     );
+  }
+
+  /** marked/WebKit sometimes leaves [label](url) or [label] as plain text in HTML output. */
+  function linkifyRemainingMarkdownInHtml(html, sourceHints) {
+    let s = String(html || "");
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/gi, (_, label, dest) => {
+      const href = resolveLinkDest(label, dest, sourceHints);
+      if (href && isPlausibleSourceUrl(href)) return anchorHtml(href);
+      return anchorHtml(dest.replace(/[\r\n\t ]+/g, ""));
+    });
+    s = s.replace(/\[([^\]]+)\](?!\()/gi, (match, label) => {
+      if (/https?:\/\//i.test(label)) return match;
+      const href = hrefForCitationLabel(label) || hrefFromSourceHints(label, sourceHints);
+      return href ? anchorHtml(href) : match;
+    });
+    return s;
   }
 
   function normalizeCitationText(text) {
@@ -450,8 +466,7 @@
 
     if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
       marked.setOptions({ breaks: true, gfm: true });
-      const parsed = marked.parse(raw);
-      const clean = DOMPurify.sanitize(parsed, {
+      const sanitizeOpts = {
         ALLOWED_TAGS: [
           "p",
           "br",
@@ -469,8 +484,11 @@
           "h4",
           "code",
         ],
-        ALLOWED_ATTR: ["href", "target", "rel"],
-      });
+        ALLOWED_ATTR: ["href", "target", "rel", "class"],
+      };
+      const parsed = marked.parse(raw);
+      let clean = DOMPurify.sanitize(parsed, sanitizeOpts);
+      clean = DOMPurify.sanitize(linkifyRemainingMarkdownInHtml(clean, hints), sanitizeOpts);
       return clean;
     }
     return markdownFallback(raw, hints);
@@ -487,6 +505,7 @@
         if (href && isPlausibleSourceUrl(href)) {
           a.setAttribute("href", href);
           a.textContent = href;
+          a.classList.add("prose-citation-link");
         }
         a.target = "_blank";
         a.rel = "noopener noreferrer";
