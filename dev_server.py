@@ -28,10 +28,10 @@ if _env.is_file():
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, val = line.partition("=")
-        os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+        os.environ[key.strip()] = val.strip().strip('"').strip("'")
 
 from lib.limits import TurnLimiter
-from lib.rag_client import rag_query
+from lib.rag_client import query_timeout_seconds, rag_query
 
 LIMITER = TurnLimiter()
 HOST = os.environ.get("EMBED_DEV_HOST", "127.0.0.1")
@@ -48,11 +48,25 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: dict) 
     handler.wfile.write(body)
 
 
+def _embed_index_html() -> bytes:
+    path = ROOT / "embed" / "index.html"
+    html = path.read_text(encoding="utf-8")
+    timeout_ms = query_timeout_seconds() * 1000
+    inject = f'<script>window.EMBED_QUERY_TIMEOUT_MS={timeout_ms};</script>\n  '
+    marker = '<script src="/embed/embed.js'
+    if marker in html and "EMBED_QUERY_TIMEOUT_MS" not in html:
+        html = html.replace(marker, inject + marker, 1)
+    return html.encode("utf-8")
+
+
 def _file_response(handler: BaseHTTPRequestHandler, path: Path) -> None:
     if not path.is_file():
         handler.send_error(404)
         return
-    data = path.read_bytes()
+    if path.name == "index.html" and path.parent.resolve() == (ROOT / "embed").resolve():
+        data = _embed_index_html()
+    else:
+        data = path.read_bytes()
     ctype, _ = mimetypes.guess_type(str(path))
     handler.send_response(200)
     handler.send_header("Content-Type", ctype or "application/octet-stream")
@@ -133,6 +147,9 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    sys.stderr.write(
+        f"Query timeout (BFF + /embed/ inject): {query_timeout_seconds()}s\n"
+    )
     print(f"Santosha embed dev server http://{HOST}:{PORT}/demo/")
     print(f"  Site preview:  http://{HOST}:{PORT}/site")
     print(f"  Float chat:    http://{HOST}:{PORT}/float")

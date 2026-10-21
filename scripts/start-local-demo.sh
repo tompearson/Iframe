@@ -93,6 +93,20 @@ embed_up() {
   curl -sf "http://${EMBED_HOST}:${EMBED_PORT}/embed/" >/dev/null 2>&1
 }
 
+embed_timeout_status() {
+  local inject_ms
+  inject_ms="$(curl -sf "http://${EMBED_HOST}:${EMBED_PORT}/embed/" 2>/dev/null \
+    | sed -n 's/.*EMBED_QUERY_TIMEOUT_MS=\([0-9][0-9]*\).*/\1/p' | head -1)"
+  if [[ -n "${inject_ms}" ]]; then
+    log "  Query timeout (browser): $((inject_ms / 1000))s (EMBED_QUERY_TIMEOUT_MS=${inject_ms} in /embed/)"
+  else
+    log "  Query timeout (browser): not injected — open /embed/ directly or restart dev_server"
+  fi
+  if [[ -f "${IFRAME_ROOT}/.env" ]] && grep -qE '^[[:space:]]*EMBED_QUERY_TIMEOUT_SECONDS=' "${IFRAME_ROOT}/.env" 2>/dev/null; then
+    log "  (.env has EMBED_QUERY_TIMEOUT_SECONDS — restart embed with --kill if you just changed it)"
+  fi
+}
+
 if [[ ! -d "${DOC_HELPER}" ]]; then
   log "ERROR: documentation-helper not found at ${DOC_HELPER}"
   exit 1
@@ -161,6 +175,7 @@ if embed_up; then
   log "Ready:"
   log "  Demo: ${DEMO_URL}"
   log "  RAG:  ${RAG_URL}/docs"
+  embed_timeout_status
   if [[ ${STARTED_RAG} -eq 0 ]] && [[ ${STARTED_EMBED} -eq 0 ]]; then
     log ""
     log "Both servers were already running. Ctrl+C exits this script only (does not stop them)."
@@ -207,6 +222,7 @@ log "Ready:"
 log "  Demo (parent + iframe): ${DEMO_URL}"
 log "  Widget only:            http://${EMBED_HOST}:${EMBED_PORT}/embed/"
 log "  RAG API:                ${RAG_URL}/docs"
+embed_timeout_status
 log ""
 if [[ ${STARTED_RAG} -eq 1 ]] || [[ ${STARTED_EMBED} -eq 1 ]]; then
   log "Press Ctrl+C to stop service(s) started by this script."

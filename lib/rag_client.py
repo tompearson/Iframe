@@ -9,6 +9,15 @@ import urllib.request
 from typing import Any
 
 
+def query_timeout_seconds() -> int:
+    raw = os.environ.get("EMBED_QUERY_TIMEOUT_SECONDS", "45")
+    try:
+        n = int(raw)
+    except ValueError:
+        return 45
+    return n if n > 0 else 45
+
+
 def rag_query(query: str) -> tuple[int, dict[str, Any]]:
     base = (os.environ.get("RAG_API_URL") or "http://127.0.0.1:8000").rstrip("/")
     secret = os.environ.get("RAG_SERVICE_SECRET", "")
@@ -19,8 +28,9 @@ def rag_query(query: str) -> tuple[int, dict[str, Any]]:
         headers["Authorization"] = f"Bearer {secret}"
 
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    timeout = query_timeout_seconds()
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return resp.status, data
     except urllib.error.HTTPError as e:
@@ -32,4 +42,9 @@ def rag_query(query: str) -> tuple[int, dict[str, Any]]:
             msg = detail or e.reason
         return e.code, {"detail": msg}
     except urllib.error.URLError as e:
-        return 502, {"detail": f"Cannot reach RAG API at {base}: {e.reason}"}
+        reason = getattr(e, "reason", e)
+        if "timed out" in str(reason).lower():
+            return 504, {
+                "detail": f"The assistant did not respond within {timeout} seconds. Please try again."
+            }
+        return 502, {"detail": f"Cannot reach RAG API at {base}: {reason}"}

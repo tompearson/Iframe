@@ -13,6 +13,10 @@ function intEnv(name, fallback) {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
+function queryTimeoutSeconds() {
+  return intEnv("EMBED_QUERY_TIMEOUT_SECONDS", 45);
+}
+
 function config() {
   return {
     maxSession: intEnv("EMBED_MAX_TURNS_PER_SESSION", 20),
@@ -20,6 +24,7 @@ function config() {
     sessionTtlMs: intEnv("EMBED_SESSION_TTL_SECONDS", 86400) * 1000,
     ipTtlMs: intEnv("EMBED_IP_TTL_SECONDS", 3600) * 1000,
     maxQueryLen: intEnv("EMBED_MAX_QUERY_LENGTH", 1000),
+    queryTimeoutSec: queryTimeoutSeconds(),
   };
 }
 
@@ -97,15 +102,27 @@ module.exports = async function handler(req, res) {
   const secret = process.env.RAG_SERVICE_SECRET;
   if (secret) headers.Authorization = `Bearer ${secret}`;
 
+  const timeoutMs = cfg.queryTimeoutSec * 1000;
+  const ac = new AbortController();
+  const timeoutId = setTimeout(() => ac.abort(), timeoutMs);
+
   let upstream;
   try {
     upstream = await fetch(`${base}/query`, {
       method: "POST",
       headers,
       body: JSON.stringify({ query }),
+      signal: ac.signal,
     });
   } catch (err) {
+    if (err.name === "AbortError") {
+      return res.status(504).json({
+        detail: `The assistant did not respond within ${cfg.queryTimeoutSec} seconds. Please try again.`,
+      });
+    }
     return res.status(502).json({ detail: `Cannot reach RAG API: ${err.message}` });
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const text = await upstream.text();
@@ -122,4 +139,8 @@ module.exports = async function handler(req, res) {
 
   data.turnsRemaining = limit.remaining;
   return res.status(200).json(data);
+};
+
+module.exports.config = {
+  maxDuration: Math.min(300, queryTimeoutSeconds() + 15),
 };

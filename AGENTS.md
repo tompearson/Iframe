@@ -57,7 +57,21 @@ python dev_server.py
 
 **One command:** `./scripts/start-local-demo.sh` (RAG + embed; see README). Or open mock parent URL from dev server output.
 
-**Linux:** use `pipenv run` / `python3` in documentation-helper; do **not** assume `python` is on PATH.
+**Linux:** use `pipenv run` / `python3` in documentation-helper; do **not** assume `python` on PATH.
+
+## Local test reminders (for agents)
+
+When telling the user to **test locally**, always say what to restart:
+
+| What changed | Restart |
+|--------------|---------|
+| **`documentation-helper`** (`core_gemini.py`, `rag_api*.py`, RAG behavior) | **RAG API** — stop/start: `pipenv run uvicorn rag_api:app --host 127.0.0.1 --port 8000` in `documentation-helper` (unless uvicorn was started with `--reload`). **Iframe `dev_server.py` does not need a restart** for RAG-only edits. |
+| **`Iframe/.env`** (e.g. `RAG_API_URL`, `RAG_SERVICE_SECRET`, `EMBED_QUERY_TIMEOUT_SECONDS`) | **Both:** `.env` is read at process start — restart **`python3 dev_server.py`** and restart **RAG uvicorn** if that repo’s `.env` changed too. |
+| **`dev_server.py`**, `lib/rag_client.py`, `lib/limits.py` | Restart **`python3 dev_server.py`** only. |
+| **`embed/`** static (`embed.js`, CSS) | Browser refresh; rebuild with `scripts/build_embed.py` if you edited `embed.src.js`. Restart dev server only if it injects config into `/embed/` (timeout ms from `.env`). |
+| **Production** | Render deploy (RAG); Vercel deploy (Iframe) — local restarts do not apply. |
+
+Also remind: after **`.env` changes**, restart the processes that load it (see table); a refresh alone is not enough.
 
 ## Implementation order (from plan)
 

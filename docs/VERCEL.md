@@ -36,6 +36,7 @@ Set for **Production** and **Preview**:
 | `EMBED_MAX_TURNS_PER_SESSION` | No | `20` |
 | `EMBED_MAX_TURNS_PER_IP` | No | `60` |
 | `EMBED_MAX_QUERY_LENGTH` | No | `1000` |
+| `EMBED_QUERY_TIMEOUT_SECONDS` | No | `45` (BFF upstream abort; raise Vercel `maxDuration` if you increase this) |
 
 Render RAG must have `VECTOR_STORE=pinecone` and a populated index — see [RENDER_GIT_DEPLOY.md](https://github.com/tompearson/documentation-helper/blob/site/santoshapilates/docs/planning/RENDER_GIT_DEPLOY.md).
 

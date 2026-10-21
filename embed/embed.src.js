@@ -6,6 +6,23 @@
   const API_BASE = window.EMBED_API_BASE || "/api";
   const SESSION_KEY = "embedSessionId";
 
+  /** Override in dev via dev_server injection: window.EMBED_QUERY_TIMEOUT_MS */
+  function queryTimeoutMs() {
+    const n = Number(window.EMBED_QUERY_TIMEOUT_MS);
+    if (Number.isFinite(n) && n > 0) return n;
+    return 45000;
+  }
+
+  function fetchWithTimeout(url, options, timeoutMs) {
+    const ac = new AbortController();
+    const timer = setTimeout(function () {
+      ac.abort();
+    }, timeoutMs);
+    return fetch(url, Object.assign({}, options, { signal: ac.signal })).finally(function () {
+      clearTimeout(timer);
+    });
+  }
+
   const messagesEl = document.getElementById("messages");
   const form = document.getElementById("form");
   const input = document.getElementById("input");
@@ -313,6 +330,43 @@
     return urls;
   }
 
+  /** Model said the site has no answer — do not show retrieval URLs as citations. */
+  function answerIndicatesNotFound(text) {
+    const a = String(text || "").trim().toLowerCase();
+    if (!a) return false;
+    const phrases = [
+      "no mention of",
+      "not mentioned",
+      "cannot find",
+      "can't find",
+      "could not find",
+      "couldn't find",
+      "not on the website",
+      "not on the site",
+      "not on santosha",
+      "does not mention",
+      "doesn't mention",
+      "not found in",
+      "no information about",
+      "does not appear",
+      "doesn't appear",
+      "nothing about",
+    ];
+    if (phrases.some(function (p) {
+      return a.indexOf(p) !== -1;
+    })) {
+      return true;
+    }
+    return /\bthere is no\b/.test(a) && /\b(mention|information|reference)\b/.test(a);
+  }
+
+  function stripTrailingUrlBlock(text) {
+    return String(text || "")
+      .replace(/(?:\n\s*https?:\/\/[^\s<>\]\)]+)+\s*$/gi, "")
+      .replace(/(?:\n\s*\[https?:\/\/[^\]]+\]\(https?:\/\/[^)]+\)\s*)+\s*$/gi, "")
+      .trim();
+  }
+
   /** Prefer pages cited in the answer; RAG Sources often omit or duplicate unrelated URLs. */
   function mergeDisplaySources(apiSources, answerText) {
     const answer = String(answerText || "");
@@ -356,6 +410,7 @@
 
   /** When the model omits markdown links, attach Sources to list bullets (else footer block). */
   function enrichAnswerWithSourceLinks(answer, displaySources) {
+    if (answerIndicatesNotFound(answer)) return stripTrailingUrlBlock(answer);
     if (answerHasInlineCitations(answer)) return answer;
     const urls = [...new Set((displaySources || []).filter(isPlausibleSourceUrl))];
     if (!urls.length) return answer;
@@ -567,15 +622,20 @@
     sendBtn.disabled = true;
     setStatus("Retrieving and generating answer…");
 
+    const timeoutMs = queryTimeoutMs();
     try {
-      const res = await fetch(API_BASE + "/query", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Embed-Session-Id": sessionId(),
+      const res = await fetchWithTimeout(
+        API_BASE + "/query",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Embed-Session-Id": sessionId(),
+          },
+          body: JSON.stringify({ query }),
         },
-        body: JSON.stringify({ query }),
-      });
+        timeoutMs
+      );
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -590,8 +650,13 @@
       }
 
       const answer = data.answer || "(No answer returned.)";
-      const displaySources = mergeDisplaySources(data.sources || [], answer);
-      const answerForDisplay = enrichAnswerWithSourceLinks(answer, displaySources);
+      const notFound = answerIndicatesNotFound(answer);
+      const displaySources = notFound
+        ? []
+        : mergeDisplaySources(data.sources || [], answer);
+      const answerForDisplay = notFound
+        ? stripTrailingUrlBlock(answer)
+        : enrichAnswerWithSourceLinks(answer, displaySources);
       appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);
@@ -599,7 +664,15 @@
         setStatus("");
       }
     } catch (err) {
-      appendMessage("error", "Could not reach the assistant. Is the dev server and RAG API running?");
+      const seconds = Math.round(timeoutMs / 1000);
+      if (err && err.name === "AbortError") {
+        appendMessage(
+          "error",
+          "The assistant did not respond within " + seconds + " seconds. Please try again."
+        );
+      } else {
+        appendMessage("error", "Could not reach the assistant. Is the dev server and RAG API running?");
+      }
       setStatus("");
     } finally {
       sendBtn.disabled = false;
