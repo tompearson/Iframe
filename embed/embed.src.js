@@ -495,15 +495,7 @@
     /* @endif */
     if (!prepared) return "";
 
-    const touchPrimary =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(hover: none) and (pointer: coarse)").matches;
-
-    if (
-      !touchPrimary &&
-      typeof marked !== "undefined" &&
-      typeof DOMPurify !== "undefined"
-    ) {
+    if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
       marked.setOptions({ breaks: true, gfm: true });
       const parsed = marked.parse(prepared);
       return finishAssistantHtml(
