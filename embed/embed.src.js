@@ -1,0 +1,582 @@
+/**
+ * Embed widget source — edit this file, then compile:
+ *   python3 scripts/build_embed.py              → embed/embed.js (ship / Vercel)
+ *   python3 scripts/build_embed.py --citation-debug → local NDJSON only
+ * See docs/DEV_CITATION_DEBUG.md
+ */
+(function () {
+  const API_BASE = window.EMBED_API_BASE || "/api";
+  const SESSION_KEY = "embedSessionId";
+
+  /* @if CITATION_DEBUG */
+  const CITATION_DEBUG_INGEST =
+    "http://127.0.0.1:7389/ingest/a79e6122-602a-47a1-88c4-c2266908101e";
+  const CITATION_DEBUG_SESSION = "ec86b3";
+
+  function citationDebugLog(location, message, data, hypothesisId, runId) {
+    fetch(CITATION_DEBUG_INGEST, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": CITATION_DEBUG_SESSION,
+      },
+      body: JSON.stringify({
+        sessionId: CITATION_DEBUG_SESSION,
+        location,
+        message,
+        data,
+        timestamp: Date.now(),
+        runId: runId || "dev",
+        hypothesisId: hypothesisId || "",
+      }),
+    }).catch(function () {});
+  }
+  /* @endif */
+
+  const messagesEl = document.getElementById("messages");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("send");
+  const clearBtn = document.getElementById("clear");
+  const statusEl = document.getElementById("status");
+
+  function sessionId() {
+    let id = sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  }
+
+  const SANTOSHA_SITE = "https://www.santoshapilates.com";
+
+  /** Squarespace paths that redirect; use canonical href in the widget. */
+  const SANTOSHA_PATH_REDIRECTS = {
+    "/about": "/about-santosha-pilates",
+    "/classes": "/virtual-classes",
+    "/home-1": "/offerings",
+  };
+
+  function normalizeSourceUrl(url) {
+    const raw = String(url || "").trim();
+    if (!/^https?:\/\//i.test(raw)) return raw;
+    try {
+      const parsed = new URL(raw);
+      if (!/^(www\.)?santoshapilates\.com$/i.test(parsed.hostname)) return raw;
+      parsed.protocol = "https:";
+      parsed.hostname = "www.santoshapilates.com";
+      const pathKey = parsed.pathname.replace(/\/$/, "") || "/";
+      if (SANTOSHA_PATH_REDIRECTS[pathKey]) {
+        parsed.pathname = SANTOSHA_PATH_REDIRECTS[pathKey];
+      }
+      parsed.search = "";
+      parsed.hash = "";
+      return parsed.href;
+    } catch (_err) {
+      return raw;
+    }
+  }
+
+  function isPlausibleSourceUrl(url) {
+    const href = normalizeSourceUrl(url);
+    if (!href || !/^https:\/\/www\.santoshapilates\.com/i.test(href)) return false;
+    try {
+      const path = new URL(href).pathname.replace(/\/$/, "") || "/";
+      if (path === "/www") return false;
+      return true;
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  function shortLinkLabel(href) {
+    try {
+      const u = new URL(href);
+      const path = u.pathname.replace(/\/$/, "") || "/";
+      if (path === "/") return "Home";
+      const slug = path.split("/").filter(Boolean).pop() || "page";
+      return slug.replace(/-/g, " ");
+    } catch (_err) {
+      return "Source";
+    }
+  }
+
+  function markdownLink(href) {
+    const url = normalizeSourceUrl(href);
+    if (!isPlausibleSourceUrl(url)) return url;
+    return `[${url}](${url})`;
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function anchorHtml(href) {
+    const url = normalizeSourceUrl(href);
+    if (!isPlausibleSourceUrl(url)) return escapeHtml(url);
+    return (
+      '<a href="' +
+      escapeHtml(url) +
+      '" target="_blank" rel="noopener noreferrer">' +
+      escapeHtml(url) +
+      "</a>"
+    );
+  }
+
+  /** GFM/marked sometimes leaves [text](url) as plain text; inject real anchors before parse. */
+  function injectHtmlLinks(s) {
+    return s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi, (_, _label, href) =>
+      anchorHtml(href)
+    );
+  }
+
+  /** Model often emits slug labels without brackets (e.g. "bookprivates 1 Home."). */
+  function linkLooseCitationLabels(s) {
+    const rules = [
+      { pattern: /(?<![(\[])\bbookprivates 1\b/gi, path: "/bookprivates-1" },
+      { pattern: /(?<![(\[])\bvirtual classes\b/gi, path: "/virtual-classes" },
+      { pattern: /(?<![(\[])\bHome\b(?=[\s.,;)]|$)/g, path: "/" },
+    ];
+    let out = s;
+    rules.forEach(({ pattern, path }) => {
+      out = out.replace(pattern, (match) => markdownLink(SANTOSHA_SITE + path));
+    });
+    return out;
+  }
+
+  function markdownLinksForUrls(urls) {
+    return urls.map((u) => markdownLink(u.trim())).join(" ");
+  }
+
+  /** Model output sometimes breaks URLs across lines/spaces (especially on narrow viewports). */
+  function collapseWhitespaceInUrls(text) {
+    return text.replace(/https?:\/\/[^\s\]]+/gi, (chunk) =>
+      chunk.replace(/[\r\n\t ]+/g, "")
+    );
+  }
+
+  /** Map descriptive [Santosha … page] labels to crawled paths when possible. */
+  function hrefForCitationLabel(label) {
+    const t = String(label || "").trim();
+    if (/home-?1?\s*page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/");
+    if (/about page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    if (/movement therapy page/i.test(t)) {
+      return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    }
+    if (/bookprivate|private.*session/i.test(t)) {
+      return normalizeSourceUrl(SANTOSHA_SITE + "/bookprivates-1");
+    }
+    if (/courses/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/courses");
+    if (/virtual classes/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/virtual-classes");
+    if (/^home$/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/");
+    return null;
+  }
+
+  const BARE_URL_RE = /(?<![(\[])(?<!\]\()(https?:\/\/[^\s<>\]\)]+)/gi;
+
+  /** RAG cites as labels, [https://…], [Source: url], or comma-separated lists — not always valid GFM. */
+  function prepareAssistantMarkdown(text) {
+    let s = collapseWhitespaceInUrls(String(text || ""));
+
+    s = s.replace(
+      /\[(https?:\/\/[^\]\s]+)\]\((https?:\/\/[^)]+)\)/gi,
+      (_m, _label, dest) => markdownLink(dest)
+    );
+
+    // Must not match [url] inside [url](url) — that leaves a orphan (url) and doubles links.
+    s = s.replace(/\[([^\]]+)\](?!\()/g, (match, inner) => {
+      const urls = inner.match(/https?:\/\/[^\s,\]\)]+/gi);
+      if (!urls || !urls.length) return match;
+      const remainder = inner
+        .replace(/https?:\/\/[^\s,\]\)]+/gi, "")
+        .replace(/sources?/gi, "")
+        .replace(/[:\s,]/g, "");
+      if (remainder.length > 0) return match;
+      return markdownLinksForUrls(urls);
+    });
+
+    s = s.replace(BARE_URL_RE, (raw) => {
+      const trimmed = raw.replace(/[.,;:!?)]+$/, "");
+      const punct = raw.slice(trimmed.length);
+      return markdownLink(trimmed) + punct;
+    });
+
+    s = s.replace(/\[([^\]]+)\](?!\()/g, (match, label) => {
+      if (/https?:\/\//i.test(label)) return match;
+      if (label.includes(",")) {
+        return label
+          .split(",")
+          .map((part) => {
+            const piece = part.trim();
+            const href = hrefForCitationLabel(piece);
+            if (href) return markdownLink(href);
+            return `*(${piece})*`;
+          })
+          .join(" ");
+      }
+      const href = hrefForCitationLabel(label);
+      if (href) return markdownLink(href);
+      return `*(${label.trim()})*`;
+    });
+
+    s = s.replace(
+      /(?<![(\[])(?<!\]\()(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi,
+      (path) => (path === "/www" ? path : markdownLink(SANTOSHA_SITE + path))
+    );
+
+    return linkLooseCitationLabels(s);
+  }
+
+  function urlsMentionedInAnswer(text) {
+    const urls = [];
+    const str = String(text || "");
+    const httpRe = /https?:\/\/[^\s<>\]\)]+/gi;
+    let match;
+    while ((match = httpRe.exec(str))) {
+      urls.push(normalizeSourceUrl(match[0].replace(/[.,;:!?)]+$/, "")));
+    }
+    const pathRe = /(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi;
+    while ((match = pathRe.exec(str))) {
+      if (match[1] === "/www") continue;
+      urls.push(normalizeSourceUrl(SANTOSHA_SITE + match[1]));
+    }
+    return urls;
+  }
+
+  /** Prefer pages cited in the answer; RAG Sources often omit or duplicate unrelated URLs. */
+  function mergeDisplaySources(apiSources, answerText) {
+    const answer = String(answerText || "");
+    const seen = new Set();
+    const out = [];
+
+    function push(url) {
+      const href = normalizeSourceUrl(url);
+      if (!isPlausibleSourceUrl(href) || seen.has(href)) return;
+      seen.add(href);
+      out.push(href);
+    }
+
+    if (/testimonials/i.test(answer)) {
+      push(SANTOSHA_SITE + "/testimonials-1");
+    }
+    urlsMentionedInAnswer(answer).forEach(push);
+    (apiSources || []).forEach(push);
+
+    /* @if CITATION_DEBUG */
+    citationDebugLog(
+      "embed.js:mergeDisplaySources",
+      "display sources merged",
+      { count: out.length, sources: out },
+      "H2-www-filter"
+    );
+    /* @endif */
+
+    return out;
+  }
+
+  /** True when the raw model answer already has linkable citations (GFM or bare URL). */
+  function answerHasInlineCitations(text) {
+    const a = String(text || "");
+    if (/\]\(https?:\/\//i.test(a)) return true;
+    if (/\[https?:\/\/[^\]]+\]\(https?:\/\//i.test(a)) return true;
+    if (/(?<![(\[])(https?:\/\/[^\s<>\]\)]+)/i.test(a)) return true;
+    return false;
+  }
+
+  const LIST_ITEM_LINE_RE = /^(\s*(?:[-*+]|\d+\.)\s+)(.+)$/;
+  const BOLD_LEAD_LINE_RE = /^(\s*\*\*[^*]+?\*\*:?\s*)(.+)$/;
+
+  function lineHasCitation(line) {
+    return (
+      /\]\(https?:\/\//i.test(line) ||
+      /(?<![(\[])(https?:\/\/[^\s<>\]\)]+)/i.test(line)
+    );
+  }
+
+  /** When the model omits markdown links, attach Sources to list bullets (else footer block). */
+  function enrichAnswerWithSourceLinks(answer, displaySources) {
+    if (answerHasInlineCitations(answer)) return answer;
+    const urls = [...new Set((displaySources || []).filter(isPlausibleSourceUrl))];
+    if (!urls.length) return answer;
+    const text = String(answer || "").trim();
+    const lines = text.split("\n");
+    let urlIdx = 0;
+    let listHits = 0;
+    const inlined = lines.map((line) => {
+      if (urlIdx >= urls.length || lineHasCitation(line)) return line;
+      let m = line.match(LIST_ITEM_LINE_RE);
+      if (!m) m = line.match(BOLD_LEAD_LINE_RE);
+      if (!m || String(m[2] || "").trim().length < 24) return line;
+      listHits += 1;
+      const link = markdownLink(urls[urlIdx]);
+      urlIdx += 1;
+      return m[1] + m[2].trimEnd() + " " + link;
+    });
+    if (listHits > 0) {
+      const rest = urls.slice(urlIdx);
+      if (!rest.length) return inlined.join("\n");
+      return inlined.join("\n") + "\n\n" + rest.map((u) => markdownLink(u)).join("\n");
+    }
+
+    const paras = text.split(/\n\n+/);
+    if (paras.length >= 2) {
+      urlIdx = 0;
+      const paraOut = paras.map((para, i) => {
+        if (i === 0 || urlIdx >= urls.length || lineHasCitation(para)) return para;
+        if (para.trim().length < 40) return para;
+        listHits += 1;
+        const link = markdownLink(urls[urlIdx]);
+        urlIdx += 1;
+        return para.trimEnd() + " " + link;
+      });
+      if (listHits > 0) {
+        const rest = urls.slice(urlIdx);
+        if (!rest.length) return paraOut.join("\n\n");
+        return paraOut.join("\n\n") + "\n\n" + rest.map((u) => markdownLink(u)).join("\n");
+      }
+    }
+
+    return text + "\n\n" + urls.map((u) => markdownLink(u)).join("\n");
+  }
+
+  /** Fallback when CDN scripts fail to load (offline). */
+  function markdownFallback(text) {
+    let s = injectHtmlLinks(prepareAssistantMarkdown(text));
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    s = s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+    return s;
+  }
+
+  function renderAssistantHtml(text) {
+    const prepared = prepareAssistantMarkdown(String(text || "").trim());
+    const raw = injectHtmlLinks(prepared);
+    /* @if CITATION_DEBUG */
+    citationDebugLog(
+      "embed.js:renderAssistantHtml",
+      "prepare pipeline",
+      {
+        orphanParensUrl: /\]\(https?:\/\/[^)]+\)\(https?:\/\//i.test(prepared),
+        mdLinkCount: (prepared.match(/\]\(https?:\/\//gi) || []).length,
+        htmlAnchorCount: (raw.match(/<a href=/gi) || []).length,
+      },
+      "H1-bracket-split",
+      "dup-fix"
+    );
+    /* @endif */
+    if (!raw) return "";
+
+    if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
+      marked.setOptions({ breaks: true, gfm: true });
+      const parsed = marked.parse(raw);
+      const clean = DOMPurify.sanitize(parsed, {
+        ALLOWED_TAGS: [
+          "p",
+          "br",
+          "strong",
+          "em",
+          "b",
+          "i",
+          "ul",
+          "ol",
+          "li",
+          "a",
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "code",
+        ],
+        ALLOWED_ATTR: ["href", "target", "rel"],
+      });
+      return clean;
+    }
+    return markdownFallback(raw);
+  }
+
+  function fillMessageBody(container, role, text) {
+    const body = document.createElement("div");
+    body.className = "msg-body";
+
+    if (role === "assistant") {
+      body.innerHTML = renderAssistantHtml(text);
+      body.querySelectorAll("a").forEach((a) => {
+        const href = normalizeSourceUrl(a.getAttribute("href") || a.href);
+        if (href && isPlausibleSourceUrl(href)) {
+          a.setAttribute("href", href);
+          a.textContent = href;
+        }
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+      });
+      /* @if CITATION_DEBUG */
+      citationDebugLog(
+        "embed.js:fillMessageBody",
+        "prose link display",
+        {
+          proseLinks: [...body.querySelectorAll("a")].map(function (a) {
+            return {
+              href: a.getAttribute("href"),
+              text: a.textContent,
+              textIsFullUrl: /^https:\/\/www\.santoshapilates\.com/i.test(String(a.textContent || "")),
+            };
+          }),
+        },
+        "H1-full-url-text"
+      );
+      /* @endif */
+    } else {
+      body.textContent = text;
+    }
+    container.appendChild(body);
+  }
+
+  function appendMessage(role, text, sources) {
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    fillMessageBody(div, role, text);
+
+    if (sources && sources.length) {
+      const details = document.createElement("details");
+      details.className = "sources";
+      const summary = document.createElement("summary");
+      summary.textContent = "Sources";
+      details.appendChild(summary);
+      const ul = document.createElement("ul");
+      sources.forEach((url) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        const href = normalizeSourceUrl(url);
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = href;
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+      details.appendChild(ul);
+      div.appendChild(details);
+    }
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function setStatus(text) {
+    statusEl.textContent = text || "";
+  }
+
+  const MQ_DESKTOP_TYPING =
+    "(min-width: 769px) and (hover: hover) and (pointer: fine)";
+
+  /** On phones, keep the keyboard from covering the new assistant reply. */
+  function refocusOrDismissKeyboard() {
+    if (window.matchMedia(MQ_DESKTOP_TYPING).matches) {
+      input.focus();
+      return;
+    }
+    input.blur();
+    window.requestAnimationFrame(function () {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    });
+  }
+
+  appendMessage(
+    "assistant",
+    "Ask me anything about Santosha Pilates. I'll search the site content and cite sources when I can."
+  );
+
+  clearBtn.addEventListener("click", () => {
+    messagesEl.innerHTML = "";
+    sessionStorage.removeItem(SESSION_KEY);
+    appendMessage(
+      "assistant",
+      "Chat cleared. Ask a new question about Santosha Pilates."
+    );
+    setStatus("");
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.shiftKey) return;
+    e.preventDefault();
+    if (sendBtn.disabled) return;
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+    } else {
+      form.dispatchEvent(new Event("submit", { cancelable: true }));
+    }
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = input.value.trim();
+    if (!query) return;
+
+    appendMessage("user", query);
+    input.value = "";
+    sendBtn.disabled = true;
+    setStatus("Retrieving and generating answer…");
+
+    try {
+      const res = await fetch(API_BASE + "/query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Embed-Session-Id": sessionId(),
+        },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const detail = data.detail || res.statusText || "Request failed";
+        appendMessage("error", typeof detail === "string" ? detail : JSON.stringify(detail));
+        setStatus(
+          res.status === 429
+            ? "Turn limit reached — click Clear under the message box for a new session."
+            : ""
+        );
+        return;
+      }
+
+      const answer = data.answer || "(No answer returned.)";
+      const displaySources = mergeDisplaySources(data.sources || [], answer);
+      const answerForDisplay = enrichAnswerWithSourceLinks(answer, displaySources);
+      /* @if CITATION_DEBUG */
+      citationDebugLog(
+        "embed.js:submit",
+        "answer citation enrich",
+        {
+          rawHadInlineCitations: answerHasInlineCitations(answer),
+          enriched: answerForDisplay !== answer,
+          displaySourceCount: displaySources.length,
+          enrichListLines: (answerForDisplay.match(/^\s*(?:[-*+]|\d+\.)\s+.*\]\(https?:\/\//gim) || [])
+            .length,
+          enrichFooterBlock:
+            /\n\n\[https?:\/\//.test(answerForDisplay) &&
+            !/^\s*(?:[-*+]|\d+\.)\s+/m.test(answer),
+        },
+        "H3-model-omit",
+        "post-fix-2"
+      );
+      /* @endif */
+      appendMessage("assistant", answerForDisplay, displaySources);
+      if (data.turnsRemaining != null) {
+        setStatus("Turns remaining (approx.): " + data.turnsRemaining);
+      } else {
+        setStatus("");
+      }
+    } catch (err) {
+      appendMessage("error", "Could not reach the assistant. Is the dev server and RAG API running?");
+      setStatus("");
+    } finally {
+      sendBtn.disabled = false;
+      refocusOrDismissKeyboard();
+    }
+  });
+})();

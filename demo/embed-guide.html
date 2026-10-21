@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Embed guide — site assistant (web designers)</title>
+  <link rel="stylesheet" href="/demo/site.css" />
+  <style>
+    .guide { max-width: 42rem; margin: 0 auto; padding: 1.75rem 1.25rem 3rem; }
+    .guide h1 { font-size: 1.5rem; margin: 0 0 0.5rem; color: var(--accent); }
+    .guide .lede { color: var(--muted); font-size: 0.95rem; margin: 0 0 1.5rem; }
+    .guide h2 { font-size: 1.1rem; margin: 1.75rem 0 0.6rem; }
+    .guide p, .guide li { font-size: 0.92rem; color: var(--muted); }
+    .guide ul { padding-left: 1.2rem; }
+    .guide pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .guide code { font-family: ui-monospace, monospace; font-size: 0.85em; }
+    .guide table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 0.75rem 0; }
+    .guide th, .guide td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; }
+    .guide th { background: var(--accent-soft); color: var(--text); }
+    .guide .callout {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <p class="preview-banner">Designer handout — embed your client’s AI assistant (examples use a fictitious brand)</p>
+
+  <main class="guide">
+    <h1>Embed guide for web designers</h1>
+    <p class="lede">
+      Add your <strong>client’s</strong> AI site chat with an <strong>iframe</strong>.
+      Examples use the fictitious brand <strong>Horizon Movement Co.</strong> — swap in your client’s name,
+      domains, and styles. You do not need API keys or backend access.
+    </p>
+
+    <div class="callout">
+      <strong>Not for production copy-paste:</strong> the <a href="/float">/float</a> page on this host is QA
+      only (floating launcher, internal test questions). Build a layout that matches the <strong>client</strong> and
+      embed only <a href="/embed/">/embed/</a>.
+    </div>
+
+    <div class="callout">
+      <strong>Embed only — not AI data:</strong> this guide covers the iframe and client-site branding.
+      It does <em>not</em> cover how answers or <strong>Sources</strong> are chosen (website crawl, search index,
+      models, prompts). That is usually separate <strong>AI engineering</strong> by the project’s technical team —
+      unless you provide that work yourself, or the client has contracted the <strong>same development team</strong>
+      for both the embed and the assistant backend (define that in your scope of work).
+      Otherwise, report wrong answers or wrong Sources to the project owner, not as a web-design fix.
+    </div>
+
+    <h2>What to get from the project owner</h2>
+    <ul>
+      <li><strong>Widget URL</strong> — e.g. <code>https://chat.horizonmovement.example/embed/</code></li>
+      <li><strong>Client domain allowlist</strong> — e.g. <code>https://www.horizonmovement.example</code> (www, apex, staging)</li>
+      <li><strong>Brand strings</strong> — iframe <code>title</code> and section labels (client name, not the host vendor)</li>
+      <li><strong>No secrets</strong> — never paste API keys or Bearer tokens into the client site</li>
+    </ul>
+
+    <h2>Basic inline embed</h2>
+    <p>Replace <code>EMBED_HOST</code> and <strong>Horizon Movement Co.</strong> with your client.</p>
+    <pre><code>&lt;section class="horizon-assistant" aria-label="Ask Horizon Movement Co."&gt;
+  &lt;iframe
+    src="https://EMBED_HOST/embed/"
+    title="Horizon Movement Co. site assistant"
+    width="100%"
+    height="560"
+    style="border:0;max-width:440px;display:block;"
+    loading="lazy"
+  &gt;&lt;/iframe&gt;
+&lt;/section&gt;</code></pre>
+
+    <h2>Responsive sizing</h2>
+    <table>
+      <tr><th>Setting</th><th>Suggestion</th></tr>
+      <tr><td>Width</td><td>100% of column, max ~420–440px</td></tr>
+      <tr><td>Height</td><td>520–600px (560px default)</td></tr>
+    </table>
+    <p>Inline layout reference: <a href="/site">/site</a> on this host (preview shell — rebrand for your client).</p>
+
+    <h2>Squarespace / CMS</h2>
+    <p>
+      Use a Code or HTML block, paste the iframe, publish, and test the <strong>live</strong> client URL.
+      If the frame is empty, ask the owner to allowlist the client domain and check the browser console for CSP errors.
+    </p>
+
+    <h2>Floating chat</h2>
+    <p>
+      Build your own launcher copy and styling for the client; point the iframe at <code>/embed/</code> only.
+      Do not reuse the internal QA chrome from <a href="/float">/float</a>.
+    </p>
+
+    <h2>Testing checklist</h2>
+    <ul>
+      <li>Chat loads on the client’s published URL (mobile and desktop)</li>
+      <li>Page chrome matches the client brand; iframe <code>title</code> uses the client name</li>
+      <li>Questions return answers (whether they are <em>correct</em> is AI engineering, not this embed)</li>
+      <li>Sources links are clickable if shown (which URLs appear is also AI engineering)</li>
+      <li>No secrets in page source or Network tab</li>
+    </ul>
+
+    <h2>Blank iframe?</h2>
+    <p>
+      Usually the <strong>client</strong> domain is not on the embed host’s <code>frame-ancestors</code> list.
+      Send the owner the exact origin (e.g. <code>https://www.horizonmovement.example</code>) and retest after deploy.
+    </p>
+  </main>
+
+  <footer class="site-footer">
+    <a href="/embed/">Widget only</a> ·
+    <a href="/site">Inline example</a> ·
+    <a href="/float">QA float (not for production)</a>
+  </footer>
+</body>
+</html>

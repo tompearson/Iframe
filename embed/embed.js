@@ -47,19 +47,118 @@
     }
   }
 
-  function markdownLinksForUrls(urls) {
-    return urls
-      .map((u) => {
-        const href = normalizeSourceUrl(u.trim());
-        return `[${href}](${href})`;
-      })
-      .join(" ");
+  function isPlausibleSourceUrl(url) {
+    const href = normalizeSourceUrl(url);
+    if (!href || !/^https:\/\/www\.santoshapilates\.com/i.test(href)) return false;
+    try {
+      const path = new URL(href).pathname.replace(/\/$/, "") || "/";
+      if (path === "/www") return false;
+      return true;
+    } catch (_err) {
+      return false;
+    }
   }
 
-  /** RAG cites as [https://…], [Source: url], or comma-separated lists — not valid GFM links. */
+  function shortLinkLabel(href) {
+    try {
+      const u = new URL(href);
+      const path = u.pathname.replace(/\/$/, "") || "/";
+      if (path === "/") return "Home";
+      const slug = path.split("/").filter(Boolean).pop() || "page";
+      return slug.replace(/-/g, " ");
+    } catch (_err) {
+      return "Source";
+    }
+  }
+
+  function markdownLink(href) {
+    const url = normalizeSourceUrl(href);
+    if (!isPlausibleSourceUrl(url)) return url;
+    return `[${url}](${url})`;
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function anchorHtml(href) {
+    const url = normalizeSourceUrl(href);
+    if (!isPlausibleSourceUrl(url)) return escapeHtml(url);
+    return (
+      '<a href="' +
+      escapeHtml(url) +
+      '" target="_blank" rel="noopener noreferrer">' +
+      escapeHtml(url) +
+      "</a>"
+    );
+  }
+
+  /** GFM/marked sometimes leaves [text](url) as plain text; inject real anchors before parse. */
+  function injectHtmlLinks(s) {
+    return s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi, (_, _label, href) =>
+      anchorHtml(href)
+    );
+  }
+
+  /** Model often emits slug labels without brackets (e.g. "bookprivates 1 Home."). */
+  function linkLooseCitationLabels(s) {
+    const rules = [
+      { pattern: /(?<![(\[])\bbookprivates 1\b/gi, path: "/bookprivates-1" },
+      { pattern: /(?<![(\[])\bvirtual classes\b/gi, path: "/virtual-classes" },
+      { pattern: /(?<![(\[])\bHome\b(?=[\s.,;)]|$)/g, path: "/" },
+    ];
+    let out = s;
+    rules.forEach(({ pattern, path }) => {
+      out = out.replace(pattern, (match) => markdownLink(SANTOSHA_SITE + path));
+    });
+    return out;
+  }
+
+  function markdownLinksForUrls(urls) {
+    return urls.map((u) => markdownLink(u.trim())).join(" ");
+  }
+
+  /** Model output sometimes breaks URLs across lines/spaces (especially on narrow viewports). */
+  function collapseWhitespaceInUrls(text) {
+    return text.replace(/https?:\/\/[^\s\]]+/gi, (chunk) =>
+      chunk.replace(/[\r\n\t ]+/g, "")
+    );
+  }
+
+  /** Map descriptive [Santosha … page] labels to crawled paths when possible. */
+  function hrefForCitationLabel(label) {
+    const t = String(label || "").trim();
+    if (/home-?1?\s*page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/");
+    if (/about page/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    if (/movement therapy page/i.test(t)) {
+      return normalizeSourceUrl(SANTOSHA_SITE + "/about-santosha-pilates");
+    }
+    if (/bookprivate|private.*session/i.test(t)) {
+      return normalizeSourceUrl(SANTOSHA_SITE + "/bookprivates-1");
+    }
+    if (/courses/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/courses");
+    if (/virtual classes/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/virtual-classes");
+    if (/^home$/i.test(t)) return normalizeSourceUrl(SANTOSHA_SITE + "/");
+    return null;
+  }
+
+  const BARE_URL_RE = /(?<![(\[])(?<!\]\()(https?:\/\/[^\s<>\]\)]+)/gi;
+
+  /** RAG cites as labels, [https://…], [Source: url], or comma-separated lists — not always valid GFM. */
   function prepareAssistantMarkdown(text) {
-    let s = String(text || "");
-    s = s.replace(/\[([^\]]+)\]/g, (match, inner) => {
+    let s = collapseWhitespaceInUrls(String(text || ""));
+
+    s = s.replace(
+      /\[(https?:\/\/[^\]\s]+)\]\((https?:\/\/[^)]+)\)/gi,
+      (_m, _label, dest) => markdownLink(dest)
+    );
+
+    // Must not match [url] inside [url](url) — that leaves a orphan (url) and doubles links.
+    s = s.replace(/\[([^\]]+)\](?!\()/g, (match, inner) => {
       const urls = inner.match(/https?:\/\/[^\s,\]\)]+/gi);
       if (!urls || !urls.length) return match;
       const remainder = inner
@@ -69,19 +168,37 @@
       if (remainder.length > 0) return match;
       return markdownLinksForUrls(urls);
     });
-    s = s.replace(/(?<!\]\()(https?:\/\/[^\s<>\]\)]+)/gi, (raw) => {
+
+    s = s.replace(BARE_URL_RE, (raw) => {
       const trimmed = raw.replace(/[.,;:!?)]+$/, "");
       const punct = raw.slice(trimmed.length);
-      return markdownLinksForUrls([trimmed]) + punct;
+      return markdownLink(trimmed) + punct;
     });
-    s = s.replace(
-      /(?<!\]\()(?<!\()(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi,
-      (path) => {
-        const href = normalizeSourceUrl(SANTOSHA_SITE + path);
-        return `[${path}](${href})`;
+
+    s = s.replace(/\[([^\]]+)\](?!\()/g, (match, label) => {
+      if (/https?:\/\//i.test(label)) return match;
+      if (label.includes(",")) {
+        return label
+          .split(",")
+          .map((part) => {
+            const piece = part.trim();
+            const href = hrefForCitationLabel(piece);
+            if (href) return markdownLink(href);
+            return `*(${piece})*`;
+          })
+          .join(" ");
       }
+      const href = hrefForCitationLabel(label);
+      if (href) return markdownLink(href);
+      return `*(${label.trim()})*`;
+    });
+
+    s = s.replace(
+      /(?<![(\[])(?<!\]\()(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi,
+      (path) => (path === "/www" ? path : markdownLink(SANTOSHA_SITE + path))
     );
-    return s;
+
+    return linkLooseCitationLabels(s);
   }
 
   function urlsMentionedInAnswer(text) {
@@ -94,6 +211,7 @@
     }
     const pathRe = /(?<!\w)(\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)*))/gi;
     while ((match = pathRe.exec(str))) {
+      if (match[1] === "/www") continue;
       urls.push(normalizeSourceUrl(SANTOSHA_SITE + match[1]));
     }
     return urls;
@@ -107,7 +225,7 @@
 
     function push(url) {
       const href = normalizeSourceUrl(url);
-      if (!href || !/^https?:\/\//i.test(href) || seen.has(href)) return;
+      if (!isPlausibleSourceUrl(href) || seen.has(href)) return;
       seen.add(href);
       out.push(href);
     }
@@ -121,16 +239,74 @@
     return out;
   }
 
+  /** True when the raw model answer already has linkable citations (GFM or bare URL). */
+  function answerHasInlineCitations(text) {
+    const a = String(text || "");
+    if (/\]\(https?:\/\//i.test(a)) return true;
+    if (/\[https?:\/\/[^\]]+\]\(https?:\/\//i.test(a)) return true;
+    if (/(?<![(\[])(https?:\/\/[^\s<>\]\)]+)/i.test(a)) return true;
+    return false;
+  }
+
+  const LIST_ITEM_LINE_RE = /^(\s*(?:[-*+]|\d+\.)\s+)(.+)$/;
+  const BOLD_LEAD_LINE_RE = /^(\s*\*\*[^*]+?\*\*:?\s*)(.+)$/;
+
+  function lineHasCitation(line) {
+    return (
+      /\]\(https?:\/\//i.test(line) ||
+      /(?<![(\[])(https?:\/\/[^\s<>\]\)]+)/i.test(line)
+    );
+  }
+
+  /** When the model omits markdown links, attach Sources to list bullets (else footer block). */
+  function enrichAnswerWithSourceLinks(answer, displaySources) {
+    if (answerHasInlineCitations(answer)) return answer;
+    const urls = [...new Set((displaySources || []).filter(isPlausibleSourceUrl))];
+    if (!urls.length) return answer;
+    const text = String(answer || "").trim();
+    const lines = text.split("\n");
+    let urlIdx = 0;
+    let listHits = 0;
+    const inlined = lines.map((line) => {
+      if (urlIdx >= urls.length || lineHasCitation(line)) return line;
+      let m = line.match(LIST_ITEM_LINE_RE);
+      if (!m) m = line.match(BOLD_LEAD_LINE_RE);
+      if (!m || String(m[2] || "").trim().length < 24) return line;
+      listHits += 1;
+      const link = markdownLink(urls[urlIdx]);
+      urlIdx += 1;
+      return m[1] + m[2].trimEnd() + " " + link;
+    });
+    if (listHits > 0) {
+      const rest = urls.slice(urlIdx);
+      if (!rest.length) return inlined.join("\n");
+      return inlined.join("\n") + "\n\n" + rest.map((u) => markdownLink(u)).join("\n");
+    }
+
+    const paras = text.split(/\n\n+/);
+    if (paras.length >= 2) {
+      urlIdx = 0;
+      const paraOut = paras.map((para, i) => {
+        if (i === 0 || urlIdx >= urls.length || lineHasCitation(para)) return para;
+        if (para.trim().length < 40) return para;
+        listHits += 1;
+        const link = markdownLink(urls[urlIdx]);
+        urlIdx += 1;
+        return para.trimEnd() + " " + link;
+      });
+      if (listHits > 0) {
+        const rest = urls.slice(urlIdx);
+        if (!rest.length) return paraOut.join("\n\n");
+        return paraOut.join("\n\n") + "\n\n" + rest.map((u) => markdownLink(u)).join("\n");
+      }
+    }
+
+    return text + "\n\n" + urls.map((u) => markdownLink(u)).join("\n");
+  }
+
   /** Fallback when CDN scripts fail to load (offline). */
   function markdownFallback(text) {
-    let s = prepareAssistantMarkdown(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    s = s.replace(
-      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-    );
+    let s = injectHtmlLinks(prepareAssistantMarkdown(text));
     s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
     s = s.split(/\n\n+/).map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
@@ -138,7 +314,9 @@
   }
 
   function renderAssistantHtml(text) {
-    const raw = prepareAssistantMarkdown(String(text || "").trim());
+    const prepared = prepareAssistantMarkdown(String(text || "").trim());
+    const raw = injectHtmlLinks(prepared);
+    
     if (!raw) return "";
 
     if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
@@ -177,10 +355,14 @@
       body.innerHTML = renderAssistantHtml(text);
       body.querySelectorAll("a").forEach((a) => {
         const href = normalizeSourceUrl(a.getAttribute("href") || a.href);
-        if (href) a.setAttribute("href", href);
+        if (href && isPlausibleSourceUrl(href)) {
+          a.setAttribute("href", href);
+          a.textContent = href;
+        }
         a.target = "_blank";
         a.rel = "noopener noreferrer";
       });
+      
     } else {
       body.textContent = text;
     }
@@ -287,16 +469,19 @@
       if (!res.ok) {
         const detail = data.detail || res.statusText || "Request failed";
         appendMessage("error", typeof detail === "string" ? detail : JSON.stringify(detail));
-        setStatus(res.status === 429 ? "Turn limit reached." : "");
+        setStatus(
+          res.status === 429
+            ? "Turn limit reached — click Clear under the message box for a new session."
+            : ""
+        );
         return;
       }
 
       const answer = data.answer || "(No answer returned.)";
-      appendMessage(
-        "assistant",
-        answer,
-        mergeDisplaySources(data.sources || [], answer)
-      );
+      const displaySources = mergeDisplaySources(data.sources || [], answer);
+      const answerForDisplay = enrichAnswerWithSourceLinks(answer, displaySources);
+      
+      appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);
       } else {

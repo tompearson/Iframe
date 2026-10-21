@@ -80,6 +80,8 @@ class Handler(BaseHTTPRequestHandler):
             return _file_response(self, ROOT / "demo" / "site-preview.html")
         if path == "/float":
             return _file_response(self, ROOT / "demo" / "site-float.html")
+        if path == "/embed-guide":
+            return _file_response(self, ROOT / "demo" / "embed-guide.html")
         if path.startswith("/demo/"):
             rel = path[len("/demo/") :].lstrip("/")
             target = (ROOT / "demo" / rel).resolve()

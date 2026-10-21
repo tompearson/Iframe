@@ -33,6 +33,7 @@ Chat widget and BFF for the Santosha Pilates RAG API ([`documentation-helper`](.
 | [**AGENTS.md**](AGENTS.md) | Cursor agent rules |
 | [**docs/PLAN.md**](docs/PLAN.md) | Architecture and phases |
 | [**docs/PRODUCTION_EMBED.md**](docs/PRODUCTION_EMBED.md) | Site admin iframe handoff |
+| [**docs/WEB_DESIGNER_EMBED_GUIDE.md**](docs/WEB_DESIGNER_EMBED_GUIDE.md) | **Web designers** — iframe embed (public: `/embed-guide`) |
 | [**docs/VERCEL.md**](docs/VERCEL.md) | Vercel import, env vars, verify |
 | [**docs/ARCHITECTURE_NOTES.md**](docs/ARCHITECTURE_NOTES.md) | Single-turn RAG, in-memory limits, no DB |
 | [**../documentation-helper/docs/planning/RAG_API_CONTRACT.md**](../documentation-helper/docs/planning/RAG_API_CONTRACT.md) | Upstream API spec |

@@ -51,6 +51,12 @@ Render must have `VECTOR_STORE=pinecone` and populated index — see documentati
 
 ---
 
+## Handoff for external designers
+
+Share **[WEB_DESIGNER_EMBED_GUIDE.md](WEB_DESIGNER_EMBED_GUIDE.md)** or the public page **`/embed-guide`** on your deploy host (no repository links). That document covers iframe snippets, Squarespace, domain allowlisting, and what not to copy from `/float`.
+
+---
+
 ## Snippet for site admin
 
 Replace the host with your **Vercel production** URL:

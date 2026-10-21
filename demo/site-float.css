@@ -66,7 +66,7 @@
   height: min(580px, calc(100vh - 2rem));
   display: flex;
   flex-direction: column;
-  background: var(--surface, #fff);
+  background: #ebe4db;
   border-radius: 12px;
   border: 1px solid var(--border, #ddd5cb);
   box-shadow: 0 16px 48px rgba(44, 40, 37, 0.18);
@@ -138,8 +138,10 @@
 .chat-window iframe {
   flex: 1 1 auto;
   width: 100%;
+  max-width: 100%;
   border: 0;
   min-height: 0;
+  min-width: 0;
 }
 
 #float-demo {

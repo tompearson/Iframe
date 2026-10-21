@@ -58,7 +58,11 @@ class TurnLimiter:
         i_count, i_exp = self._ip_counts.get(ip, (0, now + cfg.ip_ttl_seconds))
 
         if s_count >= cfg.max_turns_per_session:
-            return False, "Session turn limit reached. Start a new chat or try again later."
+            return (
+                False,
+                "Session turn limit reached. Click Clear (under the message box) to start "
+                "a new session, or try again later.",
+            )
         if i_count >= cfg.max_turns_per_ip:
             return False, "Too many requests from this network. Please try again later."
 

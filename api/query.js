@@ -42,7 +42,11 @@ function checkLimit(sessionId, ip) {
   const i = ipStore.get(addr) || { count: 0, expires: now + cfg.ipTtlMs };
 
   if (s.count >= cfg.maxSession) {
-    return { ok: false, detail: "Session turn limit reached. Start a new chat or try again later." };
+    return {
+      ok: false,
+      detail:
+        "Session turn limit reached. Click Clear (under the message box) to start a new session, or try again later.",
+    };
   }
   if (i.count >= cfg.maxIp) {
     return { ok: false, detail: "Too many requests from this network. Please try again later." };
