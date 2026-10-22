@@ -384,9 +384,51 @@
       push(SANTOSHA_SITE + "/testimonials-1");
     }
     urlsMentionedInAnswer(answer).forEach(push);
+    if (out.length) return out;
     (apiSources || []).forEach(push);
 
     return out;
+  }
+
+  const GFM_LINK_IN_TEXT_RE = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/gi;
+
+  /** One instructors URL for whole staff list — strip per-line repeats; keep a single link at end. */
+  function collapseSingleSharedSourceCitations(text) {
+    const mentioned = urlsMentionedInAnswer(text);
+    const unique = [];
+    const seen = new Set();
+    mentioned.forEach(function (u) {
+      const href = normalizeSourceUrl(u);
+      if (!isPlausibleSourceUrl(href) || seen.has(href)) return;
+      seen.add(href);
+      unique.push(href);
+    });
+    if (unique.length !== 1) return String(text || "").trim();
+
+    const only = unique[0];
+    const bareSame = new RegExp(
+      "\\s*" + only.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\//g, "\\/") + "[.,;:!?)]*",
+      "gi"
+    );
+
+    const lines = String(text || "")
+      .split("\n")
+      .map(function (line) {
+        return line
+          .replace(GFM_LINK_IN_TEXT_RE, function (match, _label, dest) {
+            return normalizeSourceUrl(dest.replace(/[\r\n\t ]+/g, "")) === only ? "" : match;
+          })
+          .replace(bareSame, "")
+          .replace(/\s{2,}/g, " ")
+          .replace(/\s+([.,;:!?])/g, "$1")
+          .trimEnd();
+      });
+
+    let body = lines.join("\n").trim();
+    if (!urlsMentionedInAnswer(body).length) {
+      body = body + "\n\n" + markdownLink(only);
+    }
+    return body;
   }
 
   /** True when the raw model answer already has linkable citations (GFM or bare URL). */
@@ -415,6 +457,20 @@
     const urls = [...new Set((displaySources || []).filter(isPlausibleSourceUrl))];
     if (!urls.length) return answer;
     const text = String(answer || "").trim();
+
+    if (urls.length === 1) {
+      const listLike = text.split("\n").filter(function (line) {
+        return (
+          LIST_ITEM_LINE_RE.test(line) ||
+          BOLD_LEAD_LINE_RE.test(line) ||
+          /^[A-Z][^:\n]{1,80}:\s+\S/.test(line.trim())
+        );
+      });
+      if (listLike.length >= 2 && !answerHasInlineCitations(text)) {
+        return text + "\n\n" + markdownLink(urls[0]);
+      }
+    }
+
     const lines = text.split("\n");
     let urlIdx = 0;
     let listHits = 0;
@@ -654,9 +710,12 @@
       const displaySources = notFound
         ? []
         : mergeDisplaySources(data.sources || [], answer);
-      const answerForDisplay = notFound
+      let answerForDisplay = notFound
         ? stripTrailingUrlBlock(answer)
         : enrichAnswerWithSourceLinks(answer, displaySources);
+      if (!notFound) {
+        answerForDisplay = collapseSingleSharedSourceCitations(answerForDisplay);
+      }
       appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {
         setStatus("Turns remaining (approx.): " + data.turnsRemaining);
