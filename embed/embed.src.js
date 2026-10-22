@@ -311,7 +311,41 @@
       (path) => (path === "/www" ? path : markdownLink(SANTOSHA_SITE + path))
     );
 
-    return linkLooseCitationLabels(s);
+    return oneCitationLinkPerLine(linkLooseCitationLabels(s));
+  }
+
+  /** Collapse comma-separated or repeated bare URLs on one line to a single markdown link. */
+  function oneCitationLinkPerLine(text) {
+    return String(text || "")
+      .split("\n")
+      .map(function (line) {
+        const hrefs = [];
+        line.replace(/https?:\/\/[^\s<>\]\),]+/gi, function (raw) {
+          const h = normalizeSourceUrl(raw.replace(/[.,;:!?)]+$/, ""));
+          if (isPlausibleSourceUrl(h) && hrefs.indexOf(h) === -1) hrefs.push(h);
+          return raw;
+        });
+        if (!hrefs.length) return line;
+
+        let body = line
+          .replace(GFM_LINK_IN_TEXT_RE, "")
+          .replace(/https?:\/\/[^\s<>\]\),]+/gi, "")
+          .replace(/,\s*,+/g, " ")
+          .replace(/,\s*\./g, ".")
+          .replace(/:\s*,/g, ":")
+          .replace(/\s{2,}/g, " ")
+          .replace(/\s+([.,;:!?])/g, "$1")
+          .trimEnd();
+
+        if (hrefs.length === 1 && /\[https?:\/\//i.test(line)) {
+          return line;
+        }
+
+        const primary = hrefs[0];
+        if (body.endsWith(":")) body = body.slice(0, -1).trimEnd();
+        return body + (body ? " " : "") + markdownLink(primary);
+      })
+      .join("\n");
   }
 
   function urlsMentionedInAnswer(text) {
