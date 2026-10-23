@@ -10,8 +10,16 @@
   --messages-bg: #ebe4db;
   --border: #ddd5cb;
   --error: #9b2c2c;
+  /* Slightly dimmer than body text; color-mix where supported */
+  --link: #524c46;
   --radius: 12px;
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --link: color-mix(in srgb, var(--text) 72%, var(--muted));
+  }
 }
 
 * {
@@ -100,21 +108,28 @@ body {
 
 .msg-body a,
 .msg-body a.prose-citation-link {
-  color: #5c4509;
-  font-weight: 600;
+  color: var(--link);
+  font-weight: inherit;
   text-decoration: underline;
-  text-decoration-thickness: 2px;
+  text-decoration-thickness: 1px;
   text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--link) 65%, transparent);
   overflow-wrap: anywhere;
   word-break: normal;
   cursor: pointer;
-  -webkit-tap-highlight-color: rgba(139, 105, 20, 0.25);
+  -webkit-tap-highlight-color: rgba(44, 40, 37, 0.12);
+}
+
+.msg-body a:hover,
+.msg-body a:focus-visible {
+  color: var(--text);
+  text-decoration-color: var(--muted);
 }
 
 .msg-body a.prose-citation-link {
-  background: rgba(232, 220, 200, 0.55);
-  padding: 0.12em 0.25em;
-  border-radius: 4px;
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 
 .msg.user .msg-body {
@@ -157,7 +172,12 @@ body {
 }
 
 .sources a {
-  color: var(--accent);
+  color: var(--link);
+  font-weight: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--link) 65%, transparent);
 }
 
 .composer {

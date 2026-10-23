@@ -461,6 +461,37 @@
     return body;
   }
 
+  /** Keep the first citation of each URL in the answer; drop later repeats (multi-page replies). */
+  function dedupeGlobalSourceUrls(text) {
+    const seen = new Set();
+    return String(text || "")
+      .split("\n")
+      .map(function (line) {
+        let cleaned = line.replace(GFM_LINK_IN_TEXT_RE, function (match, _label, dest) {
+          const href = normalizeSourceUrl(dest.replace(/[\r\n\t ]+/g, ""));
+          if (!isPlausibleSourceUrl(href)) return match;
+          if (seen.has(href)) return "";
+          seen.add(href);
+          return match;
+        });
+        cleaned = cleaned.replace(BARE_URL_RE, function (raw) {
+          const trimmed = raw.replace(/[.,;:!?)]+$/, "");
+          const punct = raw.slice(trimmed.length);
+          const href = normalizeSourceUrl(trimmed);
+          if (!isPlausibleSourceUrl(href)) return raw;
+          if (seen.has(href)) return punct.trim() ? punct : "";
+          seen.add(href);
+          return raw;
+        });
+        return cleaned
+          .replace(/\s{2,}/g, " ")
+          .replace(/\s+([.,;:!?])/g, "$1")
+          .trimEnd();
+      })
+      .join("\n")
+      .trim();
+  }
+
   /** True when the raw model answer already has linkable citations (GFM or bare URL). */
   function answerHasInlineCitations(text) {
     const a = String(text || "");
@@ -744,7 +775,9 @@
         ? stripTrailingUrlBlock(answer)
         : enrichAnswerWithSourceLinks(answer, displaySources);
       if (!notFound) {
-        answerForDisplay = collapseSingleSharedSourceCitations(answerForDisplay);
+        answerForDisplay = dedupeGlobalSourceUrls(
+          collapseSingleSharedSourceCitations(answerForDisplay)
+        );
       }
       appendMessage("assistant", answerForDisplay, displaySources);
       if (data.turnsRemaining != null) {

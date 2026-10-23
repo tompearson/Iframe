@@ -141,7 +141,14 @@
   function loadEmbed() {
     if (embedLoaded) return;
     var src = iframe.getAttribute("data-src");
-    if (src) iframe.setAttribute("src", src);
+    if (src) {
+      var shellV = iframe.getAttribute("data-shell-v");
+      var url = src;
+      if (shellV) {
+        url += (src.indexOf("?") >= 0 ? "&" : "?") + "shell=" + encodeURIComponent(shellV);
+      }
+      iframe.setAttribute("src", url);
+    }
     embedLoaded = true;
   }
 
