@@ -1,6 +1,9 @@
 /**
  * Embed widget source — edit this file, then compile:
  *   python3 scripts/build_embed.py → embed/embed.js (ship / Vercel)
+ *
+ * Display-layer answer normalization (links, Sources). Custom API clients do not
+ * get this pipeline — see docs/ANSWER_PIPELINE.md.
  */
 (function () {
   const API_BASE = window.EMBED_API_BASE || "/api";

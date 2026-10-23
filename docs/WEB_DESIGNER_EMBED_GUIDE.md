@@ -50,6 +50,10 @@ Otherwise, escalate “wrong answer” or “wrong source URL” issues to the p
 
 The widget talks to its **own origin** (the embed host), not to the client’s domain. You are not installing Node, Python, or serverless functions on the client site.
 
+### Supported integration (required for consistent chat)
+
+Use **only** the hosted widget inside your iframe (`…/embed/`). Do **not** build a custom chat that calls `/api/query` from the client site unless the **AI engineering team** explicitly owns that integration — custom clients do **not** automatically get the same link formatting, **Sources** footer, or citation fixes as the official widget. See [ANSWER_PIPELINE.md](ANSWER_PIPELINE.md) (for project owners and developers).
+
 ---
 
 ## Scope — embed only, not AI data

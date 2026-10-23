@@ -1,6 +1,6 @@
 # Architecture notes (agents & operators)
 
-*Last updated: October 17, 2026*
+*Last updated: October 22, 2026*
 
 Explicit behavior that is easy to misread when deploying **Iframe** on Vercel against **documentation-helper** on Render.
 
@@ -11,6 +11,7 @@ Explicit behavior that is easy to misread when deploying **Iframe** on Vercel ag
 3. [Session IDs and rate limits](#session-ids-and-rate-limits)
 4. [No database](#no-database)
 5. [Security boundary](#security-boundary)
+6. [Answer pipeline & third-party integrations](#answer-pipeline--third-party-integrations)
 
 ---
 
@@ -83,3 +84,18 @@ There is **no** Redis, Postgres, or Vercel KV for quotas or sessions in v1.
 - Do **not** expose Bearer token or `GEMINI_API_KEY` in client JS.
 
 See [RAG API contract](https://github.com/tompearson/documentation-helper/blob/site/santoshapilates/docs/planning/RAG_API_CONTRACT.md) and [PRODUCTION_EMBED.md](PRODUCTION_EMBED.md).
+
+---
+
+## Answer pipeline & third-party integrations
+
+Citation cleanup and **Sources** footer behavior are implemented mainly in **`embed/embed.src.js`**, not in the JSON from Render.
+
+| Client integration | Same UX as production iframe? |
+|--------------------|-------------------------------|
+| **Iframe `/embed/`** (official widget) | **Yes** |
+| Custom UI calling **`/api/query`** or Render **`/query`** | **No** — unless they reimplement embed logic or we normalize on the server |
+
+**Supported product path:** host the widget URL in an iframe; do not rebuild chat against the API unless the project explicitly owns parity testing.
+
+Full layer table and migration plan (move normalization to RAG, thin embed): **[ANSWER_PIPELINE.md](ANSWER_PIPELINE.md)**.

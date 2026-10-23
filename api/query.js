@@ -1,6 +1,9 @@
 /**
  * Vercel serverless BFF — POST /api/query → Render RAG (server-side Bearer).
  * Env: RAG_API_URL, RAG_SERVICE_SECRET, EMBED_MAX_* (optional)
+ *
+ * Forwards upstream JSON as-is. Citation normalization lives in embed.js today;
+ * supported UX is the official /embed/ iframe. See docs/ANSWER_PIPELINE.md.
  */
 
 const sessionStore = new Map();
