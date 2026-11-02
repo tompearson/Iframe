@@ -263,6 +263,10 @@
 
   function openChat() {
     loadEmbed();
+    if (!isMobileLayout()) {
+      syncAnchorFromElement(launcher);
+      applyAnchor(panel);
+    }
     panel.classList.remove("is-hidden");
     launcher.classList.add("is-hidden");
     panel.setAttribute("aria-hidden", "false");
@@ -369,6 +373,7 @@
 
     launcher.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
+      e.preventDefault();
       moved = false;
       dragging = true;
       launcher.setPointerCapture(e.pointerId);
@@ -387,6 +392,7 @@
       var dy = e.clientY - startY;
       if (!moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
       moved = true;
+      e.preventDefault();
       launcher.classList.add("is-dragging");
       anchorRight = startRight - dx;
       anchorBottom = startBottom - dy;
@@ -446,6 +452,7 @@
     header.addEventListener("pointerdown", function (e) {
       if (e.target.closest("button")) return;
       if (isMobileLayout()) return;
+      e.preventDefault();
       dragging = true;
       header.classList.add("is-dragging");
       header.setPointerCapture(e.pointerId);
@@ -462,6 +469,7 @@
 
     header.addEventListener("pointermove", function (e) {
       if (!dragging) return;
+      e.preventDefault();
       var dx = e.clientX - startX;
       var dy = e.clientY - startY;
       anchorRight = startRight - dx;
